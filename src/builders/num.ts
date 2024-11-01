@@ -87,19 +87,19 @@ export const char = {
 	},
 } as const satisfies ValueBuilder<string>;
 export function enumLike<
-	T = unknown,
+	T extends number,
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
-	Variants extends Record<string, T> = Record<string, T>,
+	Variants extends Record<T, string> = Record<T, string>,
 >(
 	realType: ValueBuilder<T, Ctx>,
 	variants: Variants,
-): ValueBuilder<keyof Variants, Ctx> {
+): ValueBuilder<Variants[keyof Variants], Ctx> {
 	return {
 		size: realType.size,
 		build(opts: ValueBuilderOptions, ctx: Ctx) {
 			const t = realType.build(opts, ctx);
-			const entry = Object.entries(variants).find(([, v]) => v === t);
-			if (entry) return entry[0] as keyof Variants;
+			const entry = Object.entries(variants).find(([k]) => k === t.toString());
+			if (entry) return entry[1] as Variants[keyof Variants];
 			throw new Error(`Unknown enum value: ${t}`);
 		},
 	};

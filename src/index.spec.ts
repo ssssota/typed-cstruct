@@ -235,7 +235,10 @@ it("enum", () => {
 	 */
 	const buf = new Uint8Array([0x01]);
 	const struct = new Struct()
-		.field("lang", typ.enumLike(typ.u8, { English: 0, Japanese: 1 }))
+		.field(
+			"lang",
+			typ.enumLike(typ.u8, { 0: "English", 1: "Japanese" } as const),
+		)
 		.build({ buf });
 	expectTypeOf(struct).toEqualTypeOf<{
 		readonly lang: "English" | "Japanese";
