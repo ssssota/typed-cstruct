@@ -221,3 +221,24 @@ it("length from field", () => {
 	}>();
 	expect(struct).toEqual({ length: 5, str: ["H", "e", "l", "l", "o"] });
 });
+it("enum", () => {
+	/**
+	 * ```c
+	 * enum Language {
+	 *   English,
+	 *   Japanese
+	 * };
+	 * struct {
+	 *   Language lang;
+	 * } buf = { Japanese };
+	 * ```
+	 */
+	const buf = new Uint8Array([0x01]);
+	const struct = new Struct()
+		.field("lang", typ.enumLike(typ.u8, { English: 0, Japanese: 1 }))
+		.build({ buf });
+	expectTypeOf(struct).toEqualTypeOf<{
+		readonly lang: "English" | "Japanese";
+	}>();
+	expect(struct).toEqual({ lang: "Japanese" });
+});

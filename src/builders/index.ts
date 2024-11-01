@@ -12,5 +12,6 @@ export {
 	u16,
 	u32,
 	u64,
+	enumLike,
 } from "./num.js";
 export { charPointerAsString, sizedCharArrayAsString } from "./string.js";
