@@ -1,6 +1,6 @@
 {
 	"name": "typed-cstruct",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Read a binary C struct, Use it as a JavaScript object",
 	"type": "module",
 	"module": "dist/index.js",
@@ -19,8 +19,15 @@
 		"fmt": "biome check --write .",
 		"prepare": "pnpm clean && pnpm build"
 	},
-	"keywords": ["c", "struct", "proxy", "reader"],
-	"files": ["dist"],
+	"keywords": [
+		"c",
+		"struct",
+		"proxy",
+		"reader"
+	],
+	"files": [
+		"dist"
+	],
 	"author": "TOMIKAWA Sotaro <tommysouta@gmail.com>",
 	"license": "MIT",
 	"packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee",
