@@ -1,6 +1,7 @@
 import type {
 	Field,
 	ObjFromFields,
+	Prettify,
 	ValueBuilder,
 	ValueBuilderOptions,
 } from "../types.js";
@@ -13,9 +14,18 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 
 	field<Name extends string, T>(
 		name: Name,
-		builder: ValueBuilder<T, ObjFromFields<Fields>>,
+		builder: ValueBuilder<T, ObjFromFields<Fields> & Record<string, unknown>>,
 	): Struct<
-		[...Fields, { name: Name; builder: ValueBuilder<T, ObjFromFields<Fields>> }]
+		[
+			...Fields,
+			{
+				name: Name;
+				builder: ValueBuilder<
+					T,
+					ObjFromFields<Fields> & Record<string, unknown>
+				>;
+			},
+		]
 	> {
 		this.fields.push({ name, builder });
 		// @ts-expect-error
@@ -53,7 +63,7 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 					return self.fields.some((f) => f.name === prop);
 				},
 			},
-		) as ObjFromFields<Fields>;
+		) as Prettify<ObjFromFields<Fields>>;
 		return ret;
 	}
 }

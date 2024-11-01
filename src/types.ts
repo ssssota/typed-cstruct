@@ -9,18 +9,24 @@ export type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
 export type BlankObject = NonNullable<unknown>;
-export type ObjFromFields<Fields extends Field[]> = Fields extends [
-	{ name: infer Name; builder: infer Builder },
-	...infer Rest,
-]
-	? Name extends string
-		? Builder extends ValueBuilder<infer T>
-			? Rest extends Field[]
-				? Prettify<{ readonly [K in Name]: T } & ObjFromFields<Rest>>
-				: { readonly [K in Name]: T }
-			: BlankObject
-		: BlankObject
-	: BlankObject;
+export type TupleToUnion<T> = T extends (infer U)[] ? U : never;
+export type UnionToIntersection<U> =
+	// biome-ignore lint/suspicious/noExplicitAny: any is needed to infer the union
+	(U extends any ? (arg: U) => void : never) extends (arg: infer I) => void
+		? I
+		: never;
+export type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
+	TupleToUnion<{
+		[K in keyof Fields]: Fields[K] extends {
+			name: infer Name;
+			builder: ValueBuilder<infer T>;
+		}
+			? Name extends string
+				? { readonly [P in Name]: T }
+				: never
+			: never;
+	}>
+>;
 
 export type ValueBuilderOptions = {
 	buf: Uint8Array;
