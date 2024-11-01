@@ -13,4 +13,4 @@ export {
 	u32,
 	u64,
 } from "./num.js";
-export { charPointerAsString } from "./string.js";
+export { charPointerAsString, sizedCharArrayAsString } from "./string.js";

@@ -10,3 +10,17 @@ export const charPointerAsString = {
 		return new TextDecoder().decode(buf.slice(ptr, zeorIndex));
 	},
 } as const satisfies ValueBuilder<string>;
+
+export const sizedCharArrayAsString = (
+	size: number,
+	nullTermination = true,
+) => {
+	return {
+		size,
+		build(opts: ValueBuilderOptions) {
+			const { buf, offset = 0 } = opts;
+			const end = nullTermination ? buf.indexOf(0, offset) : offset + size;
+			return new TextDecoder().decode(buf.slice(offset, end));
+		},
+	} as const satisfies ValueBuilder<string>;
+};

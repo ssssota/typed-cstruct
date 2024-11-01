@@ -16,85 +16,73 @@ import {
 
 export const u8 = {
 	size: 1,
-	build(opts: { buf: Uint8Array; offset?: number }) {
-		const { buf, offset = 0 } = opts;
-		return readU8(buf, offset);
+	build(opts: ValueBuilderOptions) {
+		return readU8(opts.buf, opts.offset);
 	},
 } as const satisfies ValueBuilder<number>;
 export const i8 = {
 	size: 1,
-	build(opts: { buf: Uint8Array; offset?: number }) {
-		const { buf, offset = 0 } = opts;
-		return readI8(buf, offset);
+	build(opts: ValueBuilderOptions) {
+		return readI8(opts.buf, opts.offset);
 	},
 } as const satisfies ValueBuilder<number>;
 export const u16 = {
 	size: 2,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		return readU16(buf, offset, endian);
+		return readU16(opts.buf, opts.offset, opts.endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const i16 = {
 	size: 2,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		return readI16(buf, offset, endian);
+		return readI16(opts.buf, opts.offset, opts.endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const u32 = {
 	size: 4,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		return readU32(buf, offset, endian);
+		return readU32(opts.buf, opts.offset, opts.endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const i32 = {
 	size: 4,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		return readI32(buf, offset, endian);
+		return readI32(opts.buf, opts.offset, opts.endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const u64 = {
 	size: 8,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		return readU64(buf, offset, endian);
+		return readU64(opts.buf, opts.offset, opts.endian);
 	},
 } as const satisfies ValueBuilder<bigint>;
 export const i64 = {
 	size: 8,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		return readI64(buf, offset, endian);
+		return readI64(opts.buf, opts.offset, opts.endian);
 	},
 } as const satisfies ValueBuilder<bigint>;
 export const f32 = {
 	size: 4,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		return readF32(buf, offset, endian);
+		return readF32(opts.buf, opts.offset, opts.endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const f64 = {
 	size: 8,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		return readF64(buf, offset, endian);
+		return readF64(opts.buf, opts.offset, opts.endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const bool = {
 	size: 1,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0 } = opts;
-		return readBool(buf, offset);
+		return readBool(opts.buf, opts.offset);
 	},
 } as const satisfies ValueBuilder<boolean>;
 export const char = {
 	size: 1,
 	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0 } = opts;
-		return readChar(buf, offset);
+		return readChar(opts.buf, opts.offset);
 	},
 } as const satisfies ValueBuilder<string>;

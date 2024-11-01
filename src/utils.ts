@@ -64,8 +64,8 @@ export function readF64(
 	return view(buf).getFloat64(offset, endian === "little");
 }
 export function readBool(buf: Uint8Array, offset = 0) {
-	return !!view(buf).getUint8(offset);
+	return !!readU8(buf, offset);
 }
 export function readChar(buf: Uint8Array, offset = 0) {
-	return String.fromCharCode(view(buf).getUint8(offset));
+	return String.fromCharCode(readU8(buf, offset));
 }

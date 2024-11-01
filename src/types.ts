@@ -16,8 +16,8 @@ export type ObjFromFields<Fields extends Field[]> = Fields extends [
 	? Name extends string
 		? Builder extends ValueBuilder<infer T>
 			? Rest extends Field[]
-				? Prettify<{ [K in Name]: T } & ObjFromFields<Rest>>
-				: { [K in Name]: T }
+				? Prettify<{ readonly [K in Name]: T } & ObjFromFields<Rest>>
+				: { readonly [K in Name]: T }
 			: BlankObject
 		: BlankObject
 	: BlankObject;

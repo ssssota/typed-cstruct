@@ -12,7 +12,7 @@ it("single field", () => {
 	 */
 	const buf = new Uint8Array([0x01]);
 	const struct = new Struct().field("a", typ.u8).build({ buf });
-	expectTypeOf(struct).toEqualTypeOf<{ a: number }>();
+	expectTypeOf(struct).toEqualTypeOf<{ readonly a: number }>();
 	expect(struct).toEqual({ a: 1 });
 });
 it("multiple fields", () => {
@@ -29,7 +29,10 @@ it("multiple fields", () => {
 		.field("a", typ.u8)
 		.field("b", typ.u8)
 		.build({ buf });
-	expectTypeOf(struct).toEqualTypeOf<{ a: number; b: number }>();
+	expectTypeOf(struct).toEqualTypeOf<{
+		readonly a: number;
+		readonly b: number;
+	}>();
 	expect(struct).toEqual({ a: 1, b: 2 });
 });
 it("offset", () => {
@@ -47,7 +50,10 @@ it("offset", () => {
 		.field("a", typ.u8)
 		.field("b", typ.u8)
 		.build({ buf, offset: 3 });
-	expectTypeOf(struct).toEqualTypeOf<{ a: number; b: number }>();
+	expectTypeOf(struct).toEqualTypeOf<{
+		readonly a: number;
+		readonly b: number;
+	}>();
 	expect(struct).toEqual({ a: 1, b: 2 });
 });
 it("little endian", () => {
@@ -62,8 +68,8 @@ it("little endian", () => {
 	const struct = new Struct()
 		.field("a", typ.u16)
 		.build({ buf, endian: "little" });
-	expectTypeOf(struct).toEqualTypeOf<{ a: number }>();
-	expect(struct.a).toBe(1);
+	expectTypeOf(struct).toEqualTypeOf<{ readonly a: number }>();
+	expect(struct).toEqual({ a: 1 });
 });
 it("big endian", () => {
 	/**
@@ -75,7 +81,7 @@ it("big endian", () => {
 	 */
 	const buf = new Uint8Array([0x01, 0x00]);
 	const struct = new Struct().field("a", typ.u16).build({ buf, endian: "big" });
-	expectTypeOf(struct).toEqualTypeOf<{ a: number }>();
+	expectTypeOf(struct).toEqualTypeOf<{ readonly a: number }>();
 	expect(struct).toEqual({ a: 256 });
 });
 it("char*", () => {
@@ -97,7 +103,10 @@ it("char*", () => {
 		.field("str", typ.charPointerAsString)
 		.field("len", typ.u32)
 		.build({ buf });
-	expectTypeOf(struct).toEqualTypeOf<{ str: string; len: number }>();
+	expectTypeOf(struct).toEqualTypeOf<{
+		readonly str: string;
+		readonly len: number;
+	}>();
 	expect(struct).toEqual({ str: "Hello", len: 5 });
 });
 it("sized array", () => {
@@ -118,8 +127,49 @@ it("sized array", () => {
 		.field("arr", typ.sizedArray(typ.u8, 3))
 		.field("length", typ.u8)
 		.build({ buf });
-	expectTypeOf(struct).toEqualTypeOf<{ arr: number[]; length: number }>();
+	expectTypeOf(struct).toEqualTypeOf<{
+		readonly arr: number[];
+		readonly length: number;
+	}>();
 	expect(struct).toEqual({ arr: [1, 2, 3], length: 3 });
+});
+it("sized string", () => {
+	/**
+	 * ```c
+	 * struct {
+	 *   char str[8];
+	 * } buf = { "foo" };
+	 * ```
+	 */
+	// biome-ignore format: binary readability
+	const buf = new Uint8Array([
+		0x66, 0x6f, 0x6f, 0x00, // str
+		0x00, 0x00, 0x00, 0x00, // padding
+	]);
+	const struct = new Struct()
+		.field("str", typ.sizedCharArrayAsString(8))
+		.build({ buf });
+	expectTypeOf(struct).toEqualTypeOf<{ readonly str: string }>();
+	expect(struct).toEqual({ str: "foo" });
+});
+it("sized string (disable null termination)", () => {
+	/**
+	 * ```c
+	 * struct {
+	 *   char str[8];
+	 * } buf = { "foo" };
+	 * ```
+	 */
+	// biome-ignore format: binary readability
+	const buf = new Uint8Array([
+		0x66, 0x6f, 0x6f, 0x00, // str
+		0x00, 0x00, 0x00, 0x00, // padding
+	]);
+	const struct = new Struct()
+		.field("str", typ.sizedCharArrayAsString(8, false))
+		.build({ buf });
+	expectTypeOf(struct).toEqualTypeOf<{ readonly str: string }>();
+	expect(struct).toEqual({ str: `foo${"\0".repeat(5)}` });
 });
 it("nested struct", () => {
 	/**
@@ -140,9 +190,9 @@ it("nested struct", () => {
 		.field("c", typ.u8)
 		.build({ buf });
 	expectTypeOf(struct).toEqualTypeOf<{
-		a: number;
-		inner: { b: number };
-		c: number;
+		readonly a: number;
+		readonly inner: { readonly b: number };
+		readonly c: number;
 	}>();
 	expect(struct).toEqual({ a: 1, inner: { b: 1 }, c: 255 });
 });
@@ -165,6 +215,9 @@ it("length from field", () => {
 		.field("length", typ.u8)
 		.field("str", typ.pointerArrayFromLengthField(typ.char, "length"))
 		.build({ buf, offset: 5 });
-	expectTypeOf(struct).toEqualTypeOf<{ length: number; str: string[] }>();
+	expectTypeOf(struct).toEqualTypeOf<{
+		readonly length: number;
+		readonly str: string[];
+	}>();
 	expect(struct).toEqual({ length: 5, str: ["H", "e", "l", "l", "o"] });
 });

@@ -11,7 +11,7 @@
 		"clean": "node -e 'fs.rm(\"dist\",{recursive:true,force:true},()=>{})'",
 		"check": "biome check .",
 		"fmt": "biome check --write .",
-		"prepare": "pnpm build"
+		"prepare": "pnpm clean && pnpm build"
 	},
 	"keywords": ["c", "struct", "proxy", "reader"],
 	"files": ["dist"],
