@@ -1,0 +1,25 @@
+{
+	"name": "typed-cstruct",
+	"version": "0.1.0",
+	"description": "Read a binary C struct, Use it as a JavaScript object",
+	"type": "module",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"test": "vitest",
+		"build": "tsc -p tsconfig.lib.json",
+		"clean": "node -e 'fs.rm(\"dist\",{recursive:true,force:true},()=>{})'",
+		"check": "biome check .",
+		"fmt": "biome check --write .",
+		"prepare": "pnpm build"
+	},
+	"keywords": ["c", "struct", "proxy", "reader"],
+	"author": "TOMIKAWA Sotaro <tommysouta@gmail.com>",
+	"license": "MIT",
+	"packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee",
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"typescript": "^5.6.3",
+		"vitest": "^2.1.4"
+	}
+}

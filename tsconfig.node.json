@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+		"verbatimModuleSyntax": true,
+		"strict": true,
+		"noEmit": true
+	},
+	"include": ["src/**/*.spec.ts"]
+}
