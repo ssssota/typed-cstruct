@@ -9,11 +9,13 @@ export type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
 export type TupleToUnion<T> = T extends (infer U)[] ? U : never;
-export type UnionToIntersection<U> =
-	// biome-ignore lint/suspicious/noExplicitAny: any is needed to infer the union
-	(U extends any ? (arg: U) => void : never) extends (arg: infer I) => void
-		? I
-		: never;
+export type UnionToIntersection<U> = (
+	U extends any
+		? (arg: U) => void
+		: never
+) extends (arg: infer I) => void
+	? I
+	: never;
 export type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 	TupleToUnion<{
 		[K in keyof Fields]: Fields[K] extends {
