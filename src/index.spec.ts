@@ -1,6 +1,5 @@
 import { expect, expectTypeOf, it } from "vitest";
-import * as typ from "./builders/index.js";
-import { Struct } from "./index.js";
+import Struct, * as typ from "./index.js";
 
 it("single field", () => {
 	/**
@@ -244,4 +243,52 @@ it("enum", () => {
 		readonly lang: "English" | "Japanese";
 	}>();
 	expect(struct).toEqual({ lang: "Japanese" });
+});
+it("readme sample", () => {
+	/**
+	 * ```c
+	 * struct {
+	 *   int a;
+	 *   char b;
+	 *   float c;
+	 *   char d[10];
+	 *   uint8_t buf_size;
+	 *   char *buf;
+	 * } buf = { 1, 'a', 0.5, "hello", 5, "world" };
+	 * ```
+	 */
+	// biome-ignore format: binary readability
+	const buf = new Uint8Array([
+		0x77, 0x6f, 0x72, 0x6c, 0x64, 0x00, // "world"
+		0x01, 0x00, 0x00, 0x00, // a
+		0x61, // b
+		0x00, 0x00, 0x00, 0x3f, // c
+		0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, // d
+		0x05, // buf_size
+		0x00, 0x00, 0x00, 0x00, // buf
+	]);
+	const struct = new Struct()
+		.field("a", typ.i32)
+		.field("b", typ.char)
+		.field("c", typ.f32)
+		.field("d", typ.sizedCharArrayAsString(10))
+		.field("buf_size", typ.u8)
+		.field("buf", typ.pointerArrayFromLengthField(typ.char, "buf_size"))
+		.build({ buf, offset: 6 });
+	expectTypeOf(struct).toEqualTypeOf<{
+		readonly a: number;
+		readonly b: string;
+		readonly c: number;
+		readonly d: string;
+		readonly buf_size: number;
+		readonly buf: string[];
+	}>();
+	expect(struct).toEqual({
+		a: 1,
+		b: "a",
+		c: 0.5,
+		d: "hello",
+		buf_size: 5,
+		buf: ["w", "o", "r", "l", "d"],
+	});
 });
