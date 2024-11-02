@@ -8,7 +8,6 @@ export type Field<T extends ValueBuilder = ValueBuilder> = {
 export type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
-export type BlankObject = NonNullable<unknown>;
 export type TupleToUnion<T> = T extends (infer U)[] ? U : never;
 export type UnionToIntersection<U> =
 	// biome-ignore lint/suspicious/noExplicitAny: any is needed to infer the union

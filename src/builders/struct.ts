@@ -8,7 +8,7 @@ import type {
 
 export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 	private fields: Field[] = [];
-	get size() {
+	get size(): number {
 		return this.fields.reduce((acc, f) => acc + f.builder.size, 0);
 	}
 
@@ -32,7 +32,7 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 		return this;
 	}
 
-	build(opts: ValueBuilderOptions) {
+	build(opts: ValueBuilderOptions): Prettify<ObjFromFields<Fields>> {
 		const { buf, offset = 0, endian = "little" } = opts;
 		const self = this;
 		const ret = new Proxy(

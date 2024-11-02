@@ -14,78 +14,78 @@ import {
 	readU64,
 } from "../utils.js";
 
-export const u8 = {
+export const u8: ValueBuilder<number> = {
 	size: 1,
 	build(opts: ValueBuilderOptions) {
 		return readU8(opts.buf, opts.offset);
 	},
-} as const satisfies ValueBuilder<number>;
-export const i8 = {
+} as const;
+export const i8: ValueBuilder<number> = {
 	size: 1,
 	build(opts: ValueBuilderOptions) {
 		return readI8(opts.buf, opts.offset);
 	},
-} as const satisfies ValueBuilder<number>;
-export const u16 = {
+} as const;
+export const u16: ValueBuilder<number> = {
 	size: 2,
 	build(opts: ValueBuilderOptions) {
 		return readU16(opts.buf, opts.offset, opts.endian);
 	},
-} as const satisfies ValueBuilder<number>;
-export const i16 = {
+} as const;
+export const i16: ValueBuilder<number> = {
 	size: 2,
 	build(opts: ValueBuilderOptions) {
 		return readI16(opts.buf, opts.offset, opts.endian);
 	},
-} as const satisfies ValueBuilder<number>;
-export const u32 = {
+} as const;
+export const u32: ValueBuilder<number> = {
 	size: 4,
 	build(opts: ValueBuilderOptions) {
 		return readU32(opts.buf, opts.offset, opts.endian);
 	},
-} as const satisfies ValueBuilder<number>;
-export const i32 = {
+} as const;
+export const i32: ValueBuilder<number> = {
 	size: 4,
 	build(opts: ValueBuilderOptions) {
 		return readI32(opts.buf, opts.offset, opts.endian);
 	},
-} as const satisfies ValueBuilder<number>;
-export const u64 = {
+} as const;
+export const u64: ValueBuilder<bigint> = {
 	size: 8,
 	build(opts: ValueBuilderOptions) {
 		return readU64(opts.buf, opts.offset, opts.endian);
 	},
-} as const satisfies ValueBuilder<bigint>;
-export const i64 = {
+} as const;
+export const i64: ValueBuilder<bigint> = {
 	size: 8,
 	build(opts: ValueBuilderOptions) {
 		return readI64(opts.buf, opts.offset, opts.endian);
 	},
-} as const satisfies ValueBuilder<bigint>;
-export const f32 = {
+} as const;
+export const f32: ValueBuilder<number> = {
 	size: 4,
 	build(opts: ValueBuilderOptions) {
 		return readF32(opts.buf, opts.offset, opts.endian);
 	},
-} as const satisfies ValueBuilder<number>;
-export const f64 = {
+} as const;
+export const f64: ValueBuilder<number> = {
 	size: 8,
 	build(opts: ValueBuilderOptions) {
 		return readF64(opts.buf, opts.offset, opts.endian);
 	},
-} as const satisfies ValueBuilder<number>;
-export const bool = {
+} as const;
+export const bool: ValueBuilder<boolean> = {
 	size: 1,
 	build(opts: ValueBuilderOptions) {
 		return readBool(opts.buf, opts.offset);
 	},
-} as const satisfies ValueBuilder<boolean>;
-export const char = {
+} as const;
+export const char: ValueBuilder<string> = {
 	size: 1,
 	build(opts: ValueBuilderOptions) {
 		return readChar(opts.buf, opts.offset);
 	},
-} as const satisfies ValueBuilder<string>;
+} as const;
 export function enumLike<
 	T extends number,
 	Ctx extends Record<string, unknown> = Record<string, unknown>,

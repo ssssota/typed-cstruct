@@ -1,7 +1,7 @@
 import type { ValueBuilder, ValueBuilderOptions } from "../types.js";
 import { readU32 } from "../utils.js";
 
-export const charPointerAsString = {
+export const charPointerAsString: ValueBuilder<string> = {
 	size: 4,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
@@ -9,12 +9,12 @@ export const charPointerAsString = {
 		const zeorIndex = buf.indexOf(0, ptr);
 		return new TextDecoder().decode(buf.slice(ptr, zeorIndex));
 	},
-} as const satisfies ValueBuilder<string>;
+} as const;
 
 export const sizedCharArrayAsString = (
 	size: number,
 	nullTermination = true,
-) => {
+): ValueBuilder<string> => {
 	return {
 		size,
 		build(opts: ValueBuilderOptions) {
@@ -22,5 +22,5 @@ export const sizedCharArrayAsString = (
 			const end = nullTermination ? buf.indexOf(0, offset) : offset + size;
 			return new TextDecoder().decode(buf.slice(offset, end));
 		},
-	} as const satisfies ValueBuilder<string>;
+	} as const;
 };
