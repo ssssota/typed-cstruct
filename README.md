@@ -35,7 +35,7 @@ const struct = new Struct()
   .field("d", typ.sizedCharArrayAsString(8))
   .field("buf_size", typ.u8)
   .field("buf", typ.pointerArrayFromLengthField(typ.char, "buf_size"))
-  .build({ buf, offset: 6 });
+  .read({ buf, offset: 6 });
 console.log(struct.a); // 1
 console.log(struct.b); // "a"
 console.log(struct.c); // 0.5
