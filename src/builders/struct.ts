@@ -32,7 +32,7 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 		return this;
 	}
 
-	build(opts: ValueBuilderOptions): Prettify<ObjFromFields<Fields>> {
+	proxy(opts: ValueBuilderOptions): Prettify<ObjFromFields<Fields>> {
 		const { buf, offset = 0, endian = "little" } = opts;
 		const self = this;
 		const ret = new Proxy(
@@ -51,7 +51,7 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 						.slice(0, fieldIndex)
 						.reduce((acc, f) => acc + f.builder.size, 0);
 					const field = self.fields[fieldIndex];
-					return field.builder.build(
+					return field.builder.read(
 						{ buf, offset: offset + fieldOffset, endian },
 						ret,
 					);
@@ -64,6 +64,15 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 				},
 			},
 		) as Prettify<ObjFromFields<Fields>>;
+		return ret;
+	}
+
+	read(opts: ValueBuilderOptions): Prettify<ObjFromFields<Fields>> {
+		const { buf, offset = 0, endian = "little" } = opts;
+		const proxy = this.proxy({ buf, offset, endian });
+		const ret = Object.fromEntries(Object.entries(proxy)) as Prettify<
+			ObjFromFields<Fields>
+		>;
 		return ret;
 	}
 }

@@ -40,5 +40,5 @@ export interface ValueBuilder<
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
 > {
 	size: number;
-	build(opts: ValueBuilderOptions, ctx: Ctx): T;
+	read(opts: ValueBuilderOptions, ctx: Ctx): T;
 }
