@@ -14,6 +14,7 @@ import Struct, * as typ from "typed-cstruct";
  *   char b;
  *   float c;
  *   char d[8];
+ *   uint8_t unused[4];
  *   uint8_t buf_size;
  *   char *buf;
  * } buf = { 1, 'a', 0.5, "hello", 5, "world" };
@@ -25,6 +26,7 @@ const buf = new Uint8Array([
   0x61, // b
   0x00, 0x00, 0x00, 0x3f, // c
   0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0x00, 0x00, // d
+  0x00, 0x00, 0x00, 0x00, // unused
   0x05, // buf_size
   0x00, 0x00, 0x00, 0x00, // buf*
 ]);
@@ -33,6 +35,7 @@ const struct = new Struct()
   .field("b", typ.char)
   .field("c", typ.f32)
   .field("d", typ.sizedCharArrayAsString(8))
+  .field("unused", typ.skip(typ.u8.size * 4))
   .field("buf_size", typ.u8)
   .field("buf", typ.pointerArrayFromLengthField(typ.char, "buf_size"))
   .read({ buf, offset: 6 });
