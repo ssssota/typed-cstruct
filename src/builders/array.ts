@@ -22,11 +22,10 @@ export function pointerArrayFromLengthField<T, FieldName extends string>(
 	return {
 		size: 4,
 		read(opts: ValueBuilderOptions, ctx) {
-			const { buf, offset = 0, endian = "little" } = opts;
-			const ptr = readU32(buf, offset, endian);
+			const ptr = readU32(opts);
 			const size = ctx[fieldName];
 			return Array.from({ length: size }, (_, i) =>
-				builder.read({ buf, offset: ptr + i * builder.size }, {}),
+				builder.read({ buf: opts.buf, offset: ptr + i * builder.size }, {}),
 			);
 		},
 	};

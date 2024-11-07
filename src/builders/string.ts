@@ -4,10 +4,9 @@ import { readU32 } from "../utils.js";
 export const charPointerAsString: ValueBuilder<string> = {
 	size: 4,
 	read(opts: ValueBuilderOptions) {
-		const { buf, offset = 0, endian = "little" } = opts;
-		const ptr = readU32(buf, offset, endian);
-		const zeorIndex = buf.indexOf(0, ptr);
-		return new TextDecoder().decode(buf.slice(ptr, zeorIndex));
+		const ptr = readU32(opts);
+		const zeorIndex = opts.buf.indexOf(0, ptr);
+		return new TextDecoder().decode(opts.buf.slice(ptr, zeorIndex));
 	},
 } as const;
 

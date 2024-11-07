@@ -17,73 +17,73 @@ import {
 export const u8: ValueBuilder<number> = {
 	size: 1,
 	read(opts: ValueBuilderOptions) {
-		return readU8(opts.buf, opts.offset);
+		return readU8(opts);
 	},
 } as const;
 export const i8: ValueBuilder<number> = {
 	size: 1,
 	read(opts: ValueBuilderOptions) {
-		return readI8(opts.buf, opts.offset);
+		return readI8(opts);
 	},
 } as const;
 export const u16: ValueBuilder<number> = {
 	size: 2,
 	read(opts: ValueBuilderOptions) {
-		return readU16(opts.buf, opts.offset, opts.endian);
+		return readU16(opts);
 	},
 } as const;
 export const i16: ValueBuilder<number> = {
 	size: 2,
 	read(opts: ValueBuilderOptions) {
-		return readI16(opts.buf, opts.offset, opts.endian);
+		return readI16(opts);
 	},
 } as const;
 export const u32: ValueBuilder<number> = {
 	size: 4,
 	read(opts: ValueBuilderOptions) {
-		return readU32(opts.buf, opts.offset, opts.endian);
+		return readU32(opts);
 	},
 } as const;
 export const i32: ValueBuilder<number> = {
 	size: 4,
 	read(opts: ValueBuilderOptions) {
-		return readI32(opts.buf, opts.offset, opts.endian);
+		return readI32(opts);
 	},
 } as const;
 export const u64: ValueBuilder<bigint> = {
 	size: 8,
 	read(opts: ValueBuilderOptions) {
-		return readU64(opts.buf, opts.offset, opts.endian);
+		return readU64(opts);
 	},
 } as const;
 export const i64: ValueBuilder<bigint> = {
 	size: 8,
 	read(opts: ValueBuilderOptions) {
-		return readI64(opts.buf, opts.offset, opts.endian);
+		return readI64(opts);
 	},
 } as const;
 export const f32: ValueBuilder<number> = {
 	size: 4,
 	read(opts: ValueBuilderOptions) {
-		return readF32(opts.buf, opts.offset, opts.endian);
+		return readF32(opts);
 	},
 } as const;
 export const f64: ValueBuilder<number> = {
 	size: 8,
 	read(opts: ValueBuilderOptions) {
-		return readF64(opts.buf, opts.offset, opts.endian);
+		return readF64(opts);
 	},
 } as const;
 export const bool: ValueBuilder<boolean> = {
 	size: 1,
 	read(opts: ValueBuilderOptions) {
-		return readBool(opts.buf, opts.offset);
+		return readBool(opts);
 	},
 } as const;
 export const char: ValueBuilder<string> = {
 	size: 1,
 	read(opts: ValueBuilderOptions) {
-		return readChar(opts.buf, opts.offset);
+		return readChar(opts);
 	},
 } as const;
 export function enumLike<

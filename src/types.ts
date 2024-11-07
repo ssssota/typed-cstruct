@@ -28,7 +28,7 @@ export type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 			: never;
 	}>
 >;
-
+export type Endian = "little" | "big";
 export type ValueBuilderOptions = {
 	buf: Uint8Array;
 	offset?: number;
