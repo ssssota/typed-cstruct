@@ -9,6 +9,11 @@ export type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
 export type TupleToUnion<T> = T extends (infer U)[] ? U : never;
+export type RecursiveReadonly<T extends Record<PropertyKey, unknown>> = {
+	readonly [K in keyof T]: T[K] extends Record<PropertyKey, unknown>
+		? RecursiveReadonly<T[K]>
+		: T[K];
+};
 export type UnionToIntersection<U> = (
 	U extends any
 		? (arg: U) => void
@@ -23,7 +28,7 @@ export type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 			builder: ValueBuilder<infer T>;
 		}
 			? Name extends string
-				? { readonly [P in Name]: T }
+				? { [P in Name]: T }
 				: never
 			: never;
 	}>
@@ -40,5 +45,14 @@ export interface ValueBuilder<
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
 > {
 	size: number;
-	read(opts: ValueBuilderOptions, ctx: Ctx): T;
+	proxy?(opts: ValueBuilderOptions, ctx: Ctx): T;
+	read(
+		opts: ValueBuilderOptions,
+		ctx: Ctx,
+	): T extends Array<infer U>
+		? ReadonlyArray<U>
+		: T extends Record<string, unknown>
+			? RecursiveReadonly<T>
+			: T;
+	write(value: T, opts: ValueBuilderOptions, ctx: Ctx): void;
 }

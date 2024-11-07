@@ -2,6 +2,7 @@ import type {
 	Field,
 	ObjFromFields,
 	Prettify,
+	RecursiveReadonly,
 	ValueBuilder,
 	ValueBuilderOptions,
 } from "../types.js";
@@ -32,7 +33,10 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 		return this;
 	}
 
-	proxy(opts: ValueBuilderOptions): Prettify<ObjFromFields<Fields>> {
+	private _proxy(
+		opts: ValueBuilderOptions,
+		useProxy = false,
+	): Prettify<ObjFromFields<Fields>> {
 		const { buf, offset = 0, endian = "little" } = opts;
 		const self = this;
 		const ret = new Proxy(
@@ -51,10 +55,31 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 						.slice(0, fieldIndex)
 						.reduce((acc, f) => acc + f.builder.size, 0);
 					const field = self.fields[fieldIndex];
+					if (useProxy && typeof field.builder.proxy === "function") {
+						return field.builder.proxy(
+							{ buf, offset: offset + fieldOffset, endian },
+							ret,
+						);
+					}
 					return field.builder.read(
 						{ buf, offset: offset + fieldOffset, endian },
 						ret,
 					);
+				},
+				set(_, prop, value) {
+					if (typeof prop !== "string") return false;
+					const fieldIndex = self.fields.findIndex((f) => f.name === prop);
+					if (fieldIndex === -1) return false;
+					const fieldOffset = self.fields
+						.slice(0, fieldIndex)
+						.reduce((acc, f) => acc + f.builder.size, 0);
+					const field = self.fields[fieldIndex];
+					field.builder.write(
+						value,
+						{ buf, offset: offset + fieldOffset, endian },
+						ret,
+					);
+					return true;
 				},
 				ownKeys() {
 					return self.fields.map((f) => f.name);
@@ -67,12 +92,28 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 		return ret;
 	}
 
-	read(opts: ValueBuilderOptions): Prettify<ObjFromFields<Fields>> {
-		const { buf, offset = 0, endian = "little" } = opts;
-		const proxy = this.proxy({ buf, offset, endian });
+	proxy(opts: ValueBuilderOptions): Prettify<ObjFromFields<Fields>> {
+		return this._proxy(opts, true);
+	}
+
+	read(
+		opts: ValueBuilderOptions,
+	): RecursiveReadonly<Prettify<ObjFromFields<Fields>>> {
+		const proxy = this._proxy(opts);
 		const ret = Object.fromEntries(Object.entries(proxy)) as Prettify<
 			ObjFromFields<Fields>
 		>;
 		return ret;
+	}
+
+	write(
+		value: Prettify<ObjFromFields<Fields>>,
+		opts: ValueBuilderOptions,
+	): void {
+		const proxy = this._proxy(opts);
+		for (const key of this.fields.map((f) => f.name)) {
+			// @ts-expect-error
+			proxy[key] = value[key];
+		}
 	}
 }

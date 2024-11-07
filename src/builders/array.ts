@@ -1,5 +1,5 @@
 import type { ValueBuilder, ValueBuilderOptions } from "../types.js";
-import { readU32 } from "../utils.js";
+import { readU32, unsupported } from "../utils.js";
 
 export function sizedArray<T>(
 	builder: ValueBuilder<T>,
@@ -11,7 +11,17 @@ export function sizedArray<T>(
 			const { buf, offset = 0 } = opts;
 			return Array.from({ length: size }, (_, i) =>
 				builder.read({ buf, offset: offset + i * builder.size }, {}),
-			);
+			) as T[];
+		},
+		write(value, opts, ctx) {
+			const { buf, offset = 0 } = opts;
+			for (let i = 0; i < size; i++) {
+				builder.write(
+					value[i],
+					{ buf, offset: offset + i * builder.size },
+					ctx,
+				);
+			}
 		},
 	};
 }
@@ -26,7 +36,10 @@ export function pointerArrayFromLengthField<T, FieldName extends string>(
 			const size = ctx[fieldName];
 			return Array.from({ length: size }, (_, i) =>
 				builder.read({ buf: opts.buf, offset: ptr + i * builder.size }, {}),
-			);
+			) as T[];
+		},
+		write() {
+			throw unsupported();
 		},
 	};
 }
