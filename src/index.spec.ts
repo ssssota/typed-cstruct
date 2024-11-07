@@ -288,6 +288,33 @@ it("enum", () => {
 	}>();
 	expect(struct.read({ buf })).toStrictEqual({ lang: "Japanese" });
 });
+it("skip", () => {
+	/**
+	 * ```c
+	 * struct {
+	 *   uint8_t a;
+	 *   uint8_t unused;
+	 *   uint8_t b;
+	 * } buf = { 0x01, 0xff, 0x02 };
+	 */
+	const buf = new Uint8Array([0x01, 0xff, 0x02]);
+	const struct = new Struct()
+		.field("a", typ.u8)
+		.field("unused", typ.skip(1))
+		.field("b", typ.u8);
+	expectTypeOf(struct.proxy({ buf })).toEqualTypeOf<{
+		readonly a: number;
+		readonly unused: never;
+		readonly b: number;
+	}>();
+	expect(struct.proxy({ buf })).toEqual({ a: 1, b: 2 });
+	expectTypeOf(struct.read({ buf })).toEqualTypeOf<{
+		readonly a: number;
+		readonly unused: never;
+		readonly b: number;
+	}>();
+	expect(struct.read({ buf })).toStrictEqual({ a: 1, b: 2 });
+});
 it("readme sample", () => {
 	/**
 	 * ```c

@@ -1,4 +1,4 @@
-import type { ValueBuilderOptions } from "./types.js";
+import type { ValueBuilder, ValueBuilderOptions } from "./types.js";
 const little = "little";
 export function view(buf: Uint8Array): DataView {
 	return new DataView(buf.buffer);
@@ -38,4 +38,12 @@ export function readBool(opts: ValueBuilderOptions): boolean {
 }
 export function readChar(opts: ValueBuilderOptions): string {
 	return String.fromCharCode(readU8(opts));
+}
+export function skip(size: number): ValueBuilder<never> {
+	return {
+		size,
+		read() {
+			return undefined as never;
+		},
+	};
 }
