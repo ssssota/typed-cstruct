@@ -75,7 +75,3 @@ export function readChar(opts: ValueBuilderOptions): string {
 export function writeChar(value: string, opts: ValueBuilderOptions): void {
 	writeU8(value.charCodeAt(0), opts);
 }
-
-export function unsupported(): Error {
-	return new Error("unsupported");
-}

@@ -74,6 +74,7 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 						.slice(0, fieldIndex)
 						.reduce((acc, f) => acc + f.builder.size, 0);
 					const field = self.fields[fieldIndex];
+					if (typeof field.builder.write !== "function") return false;
 					field.builder.write(
 						value,
 						{ buf, offset: offset + fieldOffset, endian },

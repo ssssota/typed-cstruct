@@ -164,7 +164,7 @@ it("char*", () => {
 	expect(struct.read(opts)).toStrictEqual({ str: "Hello", len: 5 });
 	expect(() => {
 		struct.proxy(opts).str = "World";
-	}).toThrowError("unsupported");
+	}).toThrowError("'set' on proxy: trap returned falsish for property 'str'");
 });
 it("sized array", () => {
 	/**
@@ -330,7 +330,7 @@ it("length from field", () => {
 	});
 	expect(() => {
 		struct.proxy(opts).str = ["W", "o", "r", "l", "d"];
-	}).toThrowError("unsupported");
+	}).toThrowError("'set' on proxy: trap returned falsish for property 'str'");
 	struct.proxy(opts).length = 4;
 	expect(struct.read(opts)).toStrictEqual({
 		length: 4,

@@ -108,7 +108,7 @@ export function enumLike<
 			ctx: Ctx,
 		) {
 			const entry = Object.entries(variants).find(([_, v]) => v === value);
-			if (entry) return realType.write(Number(entry[0]) as T, opts, ctx);
+			if (entry) return realType.write?.(Number(entry[0]) as T, opts, ctx);
 			throw new Error(`Unknown enum value: ${value}`);
 		},
 	} as ValueBuilder<Variants[keyof Variants], Ctx>;

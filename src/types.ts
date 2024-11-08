@@ -54,5 +54,5 @@ export interface ValueBuilder<
 		: T extends Record<string, unknown>
 			? RecursiveReadonly<T>
 			: T;
-	write(value: T, opts: ValueBuilderOptions, ctx: Ctx): void;
+	write?(value: T, opts: ValueBuilderOptions, ctx: Ctx): void;
 }

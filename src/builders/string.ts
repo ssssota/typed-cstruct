@@ -1,5 +1,5 @@
 import type { ValueBuilder, ValueBuilderOptions } from "../types.js";
-import { readU32, unsupported } from "../utils.js";
+import { readU32 } from "../utils.js";
 
 export const charPointerAsString: ValueBuilder<string> = {
 	size: 4,
@@ -7,9 +7,6 @@ export const charPointerAsString: ValueBuilder<string> = {
 		const ptr = readU32(opts);
 		const zeorIndex = opts.buf.indexOf(0, ptr);
 		return new TextDecoder().decode(opts.buf.slice(ptr, zeorIndex));
-	},
-	write() {
-		throw unsupported();
 	},
 } as const;
 
