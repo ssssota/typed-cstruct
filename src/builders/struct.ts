@@ -1,95 +1,102 @@
 import type {
-	Field,
-	ObjFromFields,
 	Prettify,
 	RecursiveReadonly,
 	ValueBuilder,
 	ValueBuilderOptions,
 } from "../types.js";
 
+type Field<T extends ValueBuilder = ValueBuilder> = {
+	name: string;
+	builder: T;
+	offset: number;
+};
+type TupleToUnion<T> = T extends (infer U)[] ? U : never;
+type UnionToIntersection<U> = (
+	U extends any
+		? (arg: U) => void
+		: never
+) extends (arg: infer I) => void
+	? I
+	: never;
+type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
+	TupleToUnion<{
+		[K in keyof Fields]: Fields[K] extends {
+			name: infer Name;
+			builder: ValueBuilder<infer T>;
+		}
+			? Name extends string
+				? { [P in Name]: T }
+				: never
+			: never;
+	}>
+>;
+
 export class Struct<Fields extends Field[] = []> implements ValueBuilder {
-	private fields: Field[] = [];
+	#size: number;
+	protected constructor(private fields: Fields) {
+		this.#size = this.fields.reduce((acc, f) => acc + f.builder.size, 0);
+	}
+
 	get size(): number {
-		return this.fields.reduce((acc, f) => acc + f.builder.size, 0);
+		return this.#size;
 	}
 
 	field<Name extends string, Builder extends ValueBuilder<any, any>>(
 		name: Name,
 		builder: Builder,
-	): Struct<[...Fields, { name: Name; builder: Builder }]> {
-		this.fields.push({ name, builder });
-		// @ts-expect-error
-		return this;
+	): Struct<[...Fields, { name: Name; builder: Builder; offset: number }]> {
+		return new Struct([...this.fields, { name, builder, offset: this.#size }]);
 	}
 
-	private _proxy(
+	#proxy(
 		opts: ValueBuilderOptions,
 		useProxy = false,
 	): Prettify<ObjFromFields<Fields>> {
 		const { buf, offset = 0, endian = "little" } = opts;
 		const self = this;
-		const ret = new Proxy(
-			{},
-			{
-				getOwnPropertyDescriptor(_, p) {
-					const value = Reflect.get(ret, p);
-					if (value === undefined) return undefined;
-					return { value, enumerable: true, configurable: true };
-				},
-				get(_, prop) {
-					if (typeof prop !== "string") return undefined;
-					const fieldIndex = self.fields.findIndex((f) => f.name === prop);
-					if (fieldIndex === -1) return undefined;
-					const fieldOffset = self.fields
-						.slice(0, fieldIndex)
-						.reduce((acc, f) => acc + f.builder.size, 0);
-					const field = self.fields[fieldIndex];
-					if (useProxy && typeof field.builder.proxy === "function") {
-						return field.builder.proxy(
-							{ buf, offset: offset + fieldOffset, endian },
-							ret,
-						);
-					}
-					return field.builder.read(
-						{ buf, offset: offset + fieldOffset, endian },
+		const base = Object.fromEntries(
+			self.fields.map((f) => [f.name, true] as const),
+		);
+		const ret = new Proxy(base, {
+			get(_, prop) {
+				if (typeof prop !== "string") return undefined;
+				const field = self.fields.find((f) => f.name === prop);
+				if (!field) return undefined;
+				if (useProxy && typeof field.builder.proxy === "function") {
+					return field.builder.proxy(
+						{ buf, offset: offset + field.offset, endian },
 						ret,
 					);
-				},
-				set(_, prop, value) {
-					if (typeof prop !== "string") return false;
-					const fieldIndex = self.fields.findIndex((f) => f.name === prop);
-					if (fieldIndex === -1) return false;
-					const fieldOffset = self.fields
-						.slice(0, fieldIndex)
-						.reduce((acc, f) => acc + f.builder.size, 0);
-					const field = self.fields[fieldIndex];
-					if (typeof field.builder.write !== "function") return false;
-					field.builder.write(
-						value,
-						{ buf, offset: offset + fieldOffset, endian },
-						ret,
-					);
-					return true;
-				},
-				ownKeys() {
-					return self.fields.map((f) => f.name);
-				},
-				has(_, prop) {
-					return self.fields.some((f) => f.name === prop);
-				},
+				}
+				return field.builder.read(
+					{ buf, offset: offset + field.offset, endian },
+					ret,
+				);
 			},
-		) as Prettify<ObjFromFields<Fields>>;
+			set(_, prop, value) {
+				if (typeof prop !== "string") return false;
+				const field = self.fields.find((f) => f.name === prop);
+				if (!field) return false;
+				if (typeof field.builder.write !== "function") return false;
+				field.builder.write(
+					value,
+					{ buf, offset: offset + field.offset, endian },
+					ret,
+				);
+				return true;
+			},
+		}) as Prettify<ObjFromFields<Fields>>;
 		return ret;
 	}
 
 	proxy(opts: ValueBuilderOptions): Prettify<ObjFromFields<Fields>> {
-		return this._proxy(opts, true);
+		return this.#proxy(opts, true);
 	}
 
 	read(
 		opts: ValueBuilderOptions,
 	): RecursiveReadonly<Prettify<ObjFromFields<Fields>>> {
-		const proxy = this._proxy(opts);
+		const proxy = this.#proxy(opts);
 		const ret = Object.fromEntries(Object.entries(proxy)) as Prettify<
 			ObjFromFields<Fields>
 		>;
@@ -100,7 +107,7 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 		value: Prettify<ObjFromFields<Fields>>,
 		opts: ValueBuilderOptions,
 	): void {
-		const proxy = this._proxy(opts);
+		const proxy = this.#proxy(opts);
 		for (const key of this.fields.map((f) => f.name)) {
 			// @ts-expect-error
 			proxy[key] = value[key];

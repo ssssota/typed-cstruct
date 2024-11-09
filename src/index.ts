@@ -1,5 +1,9 @@
 import { Struct as StructInternal } from "./builders/struct.js";
-export const Struct: typeof StructInternal<[]> = StructInternal<[]>; // hide the generic type
+export class Struct extends StructInternal<[]> {
+	constructor() {
+		super([]);
+	}
+}
 export default Struct;
 export * from "./types.js";
 export * from "./builders/index.js";

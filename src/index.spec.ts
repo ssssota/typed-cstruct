@@ -400,7 +400,7 @@ it("skip", () => {
 		readonly unused: never;
 		readonly b: number;
 	}>();
-	expect(struct.read({ buf })).toStrictEqual({ a: 1, b: 2 });
+	expect(struct.read({ buf })).toStrictEqual({ a: 1, b: 2, unused: undefined });
 });
 it("readme sample", () => {
 	/**
