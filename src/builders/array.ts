@@ -11,7 +11,7 @@ export function sizedArray<T>(
 			const { buf, offset = 0 } = opts;
 			return Array.from({ length: size }, (_, i) =>
 				builder.read({ buf, offset: offset + i * builder.size }, {}),
-			) as T[];
+			);
 		},
 		write(value, opts, ctx) {
 			const { buf, offset = 0 } = opts;
@@ -36,7 +36,7 @@ export function pointerArrayFromLengthField<T, FieldName extends string>(
 			const size = ctx[fieldName];
 			return Array.from({ length: size }, (_, i) =>
 				builder.read({ buf: opts.buf, offset: ptr + i * builder.size }, {}),
-			) as T[];
+			);
 		},
 	};
 }

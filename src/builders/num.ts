@@ -111,7 +111,7 @@ export function enumLike<
 			if (entry) return realType.write?.(Number(entry[0]) as T, opts, ctx);
 			throw new Error(`Unknown enum value: ${value}`);
 		},
-	} as ValueBuilder<Variants[keyof Variants], Ctx>;
+	};
 }
 
 export function skip(size: number): ValueBuilder<never> {

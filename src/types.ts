@@ -46,13 +46,6 @@ export interface ValueBuilder<
 > {
 	size: number;
 	proxy?(opts: ValueBuilderOptions, ctx: Ctx): T;
-	read(
-		opts: ValueBuilderOptions,
-		ctx: Ctx,
-	): T extends Array<infer U>
-		? ReadonlyArray<U>
-		: T extends Record<string, unknown>
-			? RecursiveReadonly<T>
-			: T;
+	read(opts: ValueBuilderOptions, ctx: Ctx): NoInfer<T>;
 	write?(value: T, opts: ValueBuilderOptions, ctx: Ctx): void;
 }

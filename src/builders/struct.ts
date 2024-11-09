@@ -13,21 +13,10 @@ export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 		return this.fields.reduce((acc, f) => acc + f.builder.size, 0);
 	}
 
-	field<Name extends string, T>(
+	field<Name extends string, Builder extends ValueBuilder<any, any>>(
 		name: Name,
-		builder: ValueBuilder<T, ObjFromFields<Fields> & Record<string, unknown>>,
-	): Struct<
-		[
-			...Fields,
-			{
-				name: Name;
-				builder: ValueBuilder<
-					T,
-					ObjFromFields<Fields> & Record<string, unknown>
-				>;
-			},
-		]
-	> {
+		builder: Builder,
+	): Struct<[...Fields, { name: Name; builder: Builder }]> {
 		this.fields.push({ name, builder });
 		// @ts-expect-error
 		return this;
