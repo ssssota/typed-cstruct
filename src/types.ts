@@ -13,7 +13,7 @@ export type Endian = "little" | "big";
 export type ValueBuilderOptions = {
 	buf: Uint8Array;
 	offset?: number;
-	endian?: "little" | "big";
+	endian?: Endian;
 };
 
 export interface ValueBuilder<
