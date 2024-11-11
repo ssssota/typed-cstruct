@@ -1,7 +1,7 @@
 import { Struct as StructInternal } from "./builders/struct.js";
-export class Struct extends StructInternal<NonNullable<unknown>> {
+export class Struct extends StructInternal<[]> {
 	constructor() {
-		super({});
+		super([]);
 	}
 }
 export default Struct;

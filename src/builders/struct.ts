@@ -5,26 +5,36 @@ import type {
 	ValueBuilderOptions,
 } from "../types.js";
 
-type Field<Name extends string, T extends ValueBuilder = ValueBuilder> = {
-	[Key in Name]: { builder: T; offset: number };
+type Field<T extends ValueBuilder = ValueBuilder> = {
+	name: string;
+	builder: T;
+	offset: number;
 };
-type ObjFromFields<Fields extends Field<string>> = {
-	[Key in keyof Fields]: Fields[Key] extends { builder: infer T }
-		? T extends ValueBuilder<infer U, any>
-			? U
-			: never
-		: never;
-};
+type TupleToUnion<T> = T extends (infer U)[] ? U : never;
+type UnionToIntersection<U> = (
+	U extends any
+		? (arg: U) => void
+		: never
+) extends (arg: infer I) => void
+	? I
+	: never;
+type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
+	TupleToUnion<{
+		[K in keyof Fields]: Fields[K] extends {
+			name: infer Name;
+			builder: ValueBuilder<infer T>;
+		}
+			? Name extends string
+				? { [P in Name]: T }
+				: never
+			: never;
+	}>
+>;
 
-export class Struct<Fields extends Field<string> = Record<string, never>>
-	implements ValueBuilder
-{
+export class Struct<Fields extends Field[] = []> implements ValueBuilder {
 	#size: number;
 	protected constructor(private fields: Fields) {
-		this.#size = Object.values(this.fields).reduce(
-			(acc, f) => acc + f.builder.size,
-			0,
-		);
+		this.#size = this.fields.reduce((acc, f) => acc + f.builder.size, 0);
 	}
 
 	get size(): number {
@@ -34,17 +44,8 @@ export class Struct<Fields extends Field<string> = Record<string, never>>
 	field<Name extends string, Builder extends ValueBuilder<any, any>>(
 		name: Name,
 		builder: Builder,
-	): Struct<
-		Prettify<
-			Omit<Fields, Name> & {
-				[Key in Name]: { builder: Builder; offset: number };
-			}
-		>
-	> {
-		return new Struct({
-			...this.fields,
-			[name]: { builder, offset: this.#size },
-		});
+	): Struct<[...Fields, { name: Name; builder: Builder; offset: number }]> {
+		return new Struct([...this.fields, { name, builder, offset: this.#size }]);
 	}
 
 	#proxy(
@@ -54,36 +55,32 @@ export class Struct<Fields extends Field<string> = Record<string, never>>
 		const { buf, offset = 0, endian = "little" } = opts;
 		const self = this;
 		const base = Object.fromEntries(
-			Object.keys(self.fields).map((name) => [name, true] as const),
+			self.fields.map((f) => [f.name, true] as const),
 		);
 		const ret = new Proxy(base, {
 			get(_, prop) {
 				if (typeof prop !== "string") return undefined;
-				const field = Object.entries(self.fields).find(
-					([name]) => name === prop,
-				);
+				const field = self.fields.find((f) => f.name === prop);
 				if (!field) return undefined;
-				if (useProxy && typeof field[1].builder.proxy === "function") {
-					return field[1].builder.proxy(
-						{ buf, offset: offset + field[1].offset, endian },
+				if (useProxy && typeof field.builder.proxy === "function") {
+					return field.builder.proxy(
+						{ buf, offset: offset + field.offset, endian },
 						ret,
 					);
 				}
-				return field[1].builder.read(
-					{ buf, offset: offset + field[1].offset, endian },
+				return field.builder.read(
+					{ buf, offset: offset + field.offset, endian },
 					ret,
 				);
 			},
 			set(_, prop, value) {
 				if (typeof prop !== "string") return false;
-				const field = Object.entries(self.fields).find(
-					([name]) => name === prop,
-				);
+				const field = self.fields.find((f) => f.name === prop);
 				if (!field) return false;
-				if (typeof field[1].builder.write !== "function") return false;
-				field[1].builder.write(
+				if (typeof field.builder.write !== "function") return false;
+				field.builder.write(
 					value,
-					{ buf, offset: offset + field[1].offset, endian },
+					{ buf, offset: offset + field.offset, endian },
 					ret,
 				);
 				return true;
@@ -111,7 +108,7 @@ export class Struct<Fields extends Field<string> = Record<string, never>>
 		opts: ValueBuilderOptions,
 	): void {
 		const proxy = this.#proxy(opts);
-		for (const key of Object.keys(this.fields)) {
+		for (const key of this.fields.map((f) => f.name)) {
 			// @ts-expect-error
 			proxy[key] = value[key];
 		}
