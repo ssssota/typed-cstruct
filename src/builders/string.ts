@@ -10,12 +10,12 @@ export const charPointerAsString: ValueBuilder<string> = {
 	},
 } as const;
 
-export const sizedCharArrayAsString = (
+export function sizedCharArrayAsString(
 	size: number,
 	nullTermination = true,
 	decoder: TextDecoder = new TextDecoder(),
 	encoder: TextEncoder = new TextEncoder(),
-): ValueBuilder<string> => {
+): ValueBuilder<string> {
 	return {
 		size,
 		read(opts: ValueBuilderOptions) {
@@ -31,4 +31,4 @@ export const sizedCharArrayAsString = (
 			}
 		},
 	} as const;
-};
+}

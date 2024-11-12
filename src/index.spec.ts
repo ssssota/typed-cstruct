@@ -197,6 +197,9 @@ it("sized array", () => {
 	struct.proxy(opts).arr = [4, 5, 6];
 	expect(struct.read(opts)).toStrictEqual({ arr: [4, 5, 6], length: 3 });
 	expect(buf).toStrictEqual(new Uint8Array([0x04, 0x05, 0x06, 0x03]));
+	struct.proxy(opts).arr[2] = 0;
+	expect(struct.read(opts)).toStrictEqual({ arr: [4, 5, 0], length: 3 });
+	expect(buf).toStrictEqual(new Uint8Array([0x04, 0x05, 0x00, 0x03]));
 	struct.write({ arr: [7, 8, 0], length: 2 }, opts);
 	expect(struct.read(opts)).toStrictEqual({ arr: [7, 8, 0], length: 2 });
 	expect(buf).toStrictEqual(new Uint8Array([0x07, 0x08, 0x00, 0x02]));

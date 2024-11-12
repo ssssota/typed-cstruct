@@ -5,13 +5,47 @@ export function sizedArray<T>(
 	builder: ValueBuilder<T>,
 	size: number,
 ): ValueBuilder<T[]> {
+	const proxy = (
+		opts: ValueBuilderOptions,
+		_: Record<string, unknown>,
+		useProxy = true,
+	) => {
+		return new Proxy<T[]>(Array.from({ length: size }), {
+			get(target, prop) {
+				const defaultValue = Reflect.get(target, prop);
+				if (defaultValue !== undefined || typeof prop === "symbol")
+					return defaultValue;
+				const index = Number(prop);
+				if (index < 0 || size <= index) return undefined;
+				const { buf, offset = 0 } = opts;
+				if (useProxy && typeof builder.proxy === "function") {
+					return builder.proxy(
+						{ buf, offset: offset + index * builder.size },
+						{},
+					);
+				}
+				return builder.read({ buf, offset: offset + index * builder.size }, {});
+			},
+			set(_, prop, value) {
+				if (typeof prop === "symbol") return false;
+				const index = Number(prop);
+				if (!Number.isFinite(index)) return false;
+				const { buf, offset = 0 } = opts;
+				if (typeof builder.write !== "function") return false;
+				builder.write(
+					value,
+					{ buf, offset: offset + index * builder.size },
+					{},
+				);
+				return true;
+			},
+		});
+	};
 	return {
 		size: size * builder.size,
+		proxy,
 		read(opts: ValueBuilderOptions) {
-			const { buf, offset = 0 } = opts;
-			return Array.from({ length: size }, (_, i) =>
-				builder.read({ buf, offset: offset + i * builder.size }, {}),
-			);
+			return proxy(opts, {}, false).slice();
 		},
 		write(value, opts, ctx) {
 			const { buf, offset = 0 } = opts;
