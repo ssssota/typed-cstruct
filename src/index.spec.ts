@@ -405,6 +405,52 @@ it("skip", () => {
 	}>();
 	expect(struct.read({ buf })).toStrictEqual({ a: 1, b: 2, unused: undefined });
 });
+it("custom builder", () => {
+	const float = (value: number) =>
+		new Uint8Array(new Float32Array([value]).buffer);
+	/**
+	 * ```c
+	 * struct {
+	 *   float pos[3];
+	 *   float rot[3];
+	 * } buf = { { 1.0, 2.0, 3.0 }, { 4.0, 5.0, 6.0 } };
+	 */
+	const buf = new Uint8Array([
+		...float(1.0),
+		...float(2.0),
+		...float(3.0),
+		...float(4.0),
+		...float(5.0),
+		...float(6.0),
+	]);
+	const xyz = typ.defineBuilder<{ x: number; y: number; z: number }>({
+		size: 12,
+		read: (opts, ctx) => {
+			const offset = opts.offset ?? 0;
+			const x = typ.f32.read({ ...opts, offset }, ctx);
+			const y = typ.f32.read({ ...opts, offset: offset + 4 }, ctx);
+			const z = typ.f32.read({ ...opts, offset: offset + 8 }, ctx);
+			return { x, y, z };
+		},
+	});
+	const struct = new Struct().field("pos", xyz).field("rot", xyz);
+	expectTypeOf(struct.proxy({ buf })).toEqualTypeOf<{
+		pos: { x: number; y: number; z: number };
+		rot: { x: number; y: number; z: number };
+	}>();
+	expect(struct.proxy({ buf })).toEqual({
+		pos: { x: 1, y: 2, z: 3 },
+		rot: { x: 4, y: 5, z: 6 },
+	});
+	expectTypeOf(struct.read({ buf })).toEqualTypeOf<{
+		readonly pos: Readonly<{ x: number; y: number; z: number }>;
+		readonly rot: Readonly<{ x: number; y: number; z: number }>;
+	}>();
+	expect(struct.read({ buf })).toStrictEqual({
+		pos: { x: 1, y: 2, z: 3 },
+		rot: { x: 4, y: 5, z: 6 },
+	});
+});
 it("readme sample", () => {
 	/**
 	 * ```c
