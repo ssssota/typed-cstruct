@@ -117,12 +117,3 @@ export function enumLike<
 		},
 	};
 }
-
-export function skip(size: number): ReadonlyValueBuilder<never> {
-	return {
-		size,
-		read() {
-			return undefined as never;
-		},
-	};
-}

@@ -1,10 +1,4 @@
-import type {
-	ProxyValueBuilder,
-	ReadonlyValueBuilder,
-	ValueBuilder,
-	ValueBuilderOptions,
-	WritableValueBuilder,
-} from "./types.js";
+import type { ValueBuilderOptions } from "./types.js";
 const little = "little";
 export function view(buf: Uint8Array): DataView {
 	return new DataView(buf.buffer);
@@ -80,23 +74,4 @@ export function readChar(opts: ValueBuilderOptions): string {
 }
 export function writeChar(value: string, opts: ValueBuilderOptions): void {
 	writeU8(value.charCodeAt(0), opts);
-}
-
-export function defineBuilder<
-	T,
-	Ctx extends Record<string, unknown> = Record<string, unknown>,
->(builder: ReadonlyValueBuilder<T, Ctx>): ReadonlyValueBuilder<T, Ctx>;
-export function defineBuilder<
-	T,
-	Ctx extends Record<string, unknown> = Record<string, unknown>,
->(builder: WritableValueBuilder<T, Ctx>): WritableValueBuilder<T, Ctx>;
-export function defineBuilder<
-	T,
-	Ctx extends Record<string, unknown> = Record<string, unknown>,
->(builder: ProxyValueBuilder<T, Ctx>): ProxyValueBuilder<T, Ctx>;
-export function defineBuilder<
-	T,
-	Ctx extends Record<string, unknown> = Record<string, unknown>,
->(builder: ValueBuilder<T, Ctx>): ValueBuilder<T, Ctx> {
-	return builder;
 }

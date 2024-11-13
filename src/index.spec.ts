@@ -150,7 +150,7 @@ it("char*", () => {
 	]);
 	const opts = { buf };
 	const struct = new Struct()
-		.field("str", typ.charPointerAsString)
+		.field("str", typ.charPointerAsString())
 		.field("len", typ.u32);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		readonly str: string;
@@ -247,7 +247,7 @@ it("sized string (disable null termination)", () => {
 	const opts = { buf };
 	const struct = new Struct().field(
 		"str",
-		typ.sizedCharArrayAsString(8, false),
+		typ.sizedCharArrayAsString(8, { nullTermination: false }),
 	);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{ str: string }>();
 	expect(struct.proxy(opts)).toEqual({ str: `foo${"\0".repeat(5)}` });
@@ -372,6 +372,33 @@ it("enum", () => {
 	expect(struct.read(opts)).toStrictEqual({ lang: "English" });
 	expect(buf).toStrictEqual(new Uint8Array([0x00]));
 });
+it("convert", () => {
+	/**
+	 * ```c
+	 * struct {
+	 *   uint8_t pos[3];
+	 * } buf = { { 1, 2, 3 } };
+	 * ```
+	 */
+	const buf = new Uint8Array([0x01, 0x02, 0x03]);
+	const opts = { buf };
+	const struct = new Struct().field(
+		"pos",
+		typ.convert(typ.sizedArray(typ.u8, 3), (arr) => ({
+			x: arr[0],
+			y: arr[1],
+			z: arr[2],
+		})),
+	);
+	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
+		readonly pos: Readonly<{ x: number; y: number; z: number }>;
+	}>();
+	expect(struct.proxy(opts)).toEqual({ pos: { x: 1, y: 2, z: 3 } });
+	expectTypeOf(struct.read(opts)).toEqualTypeOf<{
+		readonly pos: Readonly<{ x: number; y: number; z: number }>;
+	}>();
+	expect(struct.read(opts)).toStrictEqual({ pos: { x: 1, y: 2, z: 3 } });
+});
 it("skip", () => {
 	/**
 	 * ```c
@@ -382,22 +409,23 @@ it("skip", () => {
 	 * } buf = { 0x01, 0xff, 0x02 };
 	 */
 	const buf = new Uint8Array([0x01, 0xff, 0x02]);
+	const opts = { buf };
 	const struct = new Struct()
 		.field("a", typ.u8)
 		.field("unused", typ.skip(typ.u8.size))
 		.field("b", typ.u8);
-	expectTypeOf(struct.proxy({ buf })).toEqualTypeOf<{
+	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		a: number;
 		readonly unused: never;
 		b: number;
 	}>();
-	expect(struct.proxy({ buf })).toEqual({ a: 1, b: 2 });
-	expectTypeOf(struct.read({ buf })).toEqualTypeOf<{
+	expect(struct.proxy(opts)).toEqual({ a: 1, b: 2 });
+	expectTypeOf(struct.read(opts)).toEqualTypeOf<{
 		readonly a: number;
 		readonly unused: never;
 		readonly b: number;
 	}>();
-	expect(struct.read({ buf })).toStrictEqual({ a: 1, b: 2, unused: undefined });
+	expect(struct.read(opts)).toStrictEqual({ a: 1, b: 2, unused: undefined });
 });
 it("custom builder", () => {
 	const float = (value: number) =>
@@ -465,88 +493,81 @@ it("custom builder", () => {
 		},
 		write: xyzWritable.write,
 	});
+	const opts = { buf };
 	const struct = new Struct()
 		.field("pos", xyzReadonly)
 		.field("rot", xyzWritable)
 		.field("scale", xyzProxy);
-	expectTypeOf(struct.proxy({ buf })).toEqualTypeOf<{
+	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		readonly pos: Readonly<{ x: number; y: number; z: number }>;
 		rot: Readonly<{ x: number; y: number; z: number }>;
 		scale: { x: number; y: number; z: number };
 	}>();
-	expect(struct.proxy({ buf })).toEqual({
+	expect(struct.proxy(opts)).toEqual({
 		pos: { x: 1, y: 2, z: 3 },
 		rot: { x: 4, y: 5, z: 6 },
 		scale: { x: 7, y: 8, z: 9 },
 	});
-	expectTypeOf(struct.read({ buf })).toEqualTypeOf<{
+	expectTypeOf(struct.read(opts)).toEqualTypeOf<{
 		readonly pos: Readonly<{ x: number; y: number; z: number }>;
 		readonly rot: Readonly<{ x: number; y: number; z: number }>;
 		readonly scale: Readonly<{ x: number; y: number; z: number }>;
 	}>();
-	expect(struct.read({ buf })).toStrictEqual({
+	expect(struct.read(opts)).toStrictEqual({
 		pos: { x: 1, y: 2, z: 3 },
 		rot: { x: 4, y: 5, z: 6 },
 		scale: { x: 7, y: 8, z: 9 },
 	});
-	struct.proxy({ buf }).scale.x = 10;
-	expect(struct.read({ buf })).toStrictEqual({
+	struct.proxy(opts).scale.x = 10;
+	expect(struct.read(opts)).toStrictEqual({
 		pos: { x: 1, y: 2, z: 3 },
 		rot: { x: 4, y: 5, z: 6 },
 		scale: { x: 10, y: 8, z: 9 },
 	});
-	struct.proxy({ buf }).rot = { x: 11, y: 12, z: 13 };
-	expect(struct.read({ buf })).toStrictEqual({
+	struct.proxy(opts).rot = { x: 11, y: 12, z: 13 };
+	expect(struct.read(opts)).toStrictEqual({
 		pos: { x: 1, y: 2, z: 3 },
 		rot: { x: 11, y: 12, z: 13 },
 		scale: { x: 10, y: 8, z: 9 },
 	});
 });
 it("readme sample", () => {
-	/**
-	 * ```c
-	 * struct {
-	 *   int a;
-	 *   char b;
-	 *   float c;
-	 *   char d[8];
-	 *   uint8_t buf_size;
-	 *   char *buf;
-	 * } buf = { 1, 'a', 0.5, "hello", 5, "world" };
-	 * ```
-	 */
+	// 0. Check the struct definition
+	// struct {
+	//   uint8_t a;
+	//   int16_t b;
+	//   float c;
+	// } buf = { 1, 0x0302, 1.0f };
 	// biome-ignore format: binary readability
 	const buf = new Uint8Array([
-		0x77, 0x6f, 0x72, 0x6c, 0x64, 0x00, // "world"
-		0x01, 0x00, 0x00, 0x00, // a
-		0x61, // b
-		0x00, 0x00, 0x00, 0x3f, // c
-		0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0x00, 0x00, // d
-		0x05, // buf_size
-		0x00, 0x00, 0x00, 0x00, // buf*
+		0x01, // a
+		0x02, 0x03, // b
+		0x00, 0x00, 0x80, 0x3f, // c
 	]);
+
+	// 1. Define a struct
 	const struct = new Struct()
-		.field("a", typ.i32)
-		.field("b", typ.char)
-		.field("c", typ.f32)
-		.field("d", typ.sizedCharArrayAsString(8))
-		.field("buf_size", typ.u8)
-		.field("buf", typ.pointerArrayFromLengthField(typ.char, "buf_size"))
-		.read({ buf, offset: 6 });
-	expectTypeOf(struct).toEqualTypeOf<{
-		readonly a: number;
-		readonly b: string;
-		readonly c: number;
-		readonly d: string;
-		readonly buf_size: number;
-		readonly buf: string[];
-	}>();
-	expect(struct).toEqual({
-		a: 1,
-		b: "a",
-		c: 0.5,
-		d: "hello",
-		buf_size: 5,
-		buf: ["w", "o", "r", "l", "d"],
-	});
+		.field("a", typ.u8) // unsigned 8-bit(1-byte) integer
+		.field("b", typ.i16) // 16-bit(2-byte) integer
+		.field("c", typ.f32); // 32-bit(4-byte) float
+
+	// 2a. Read a struct from a buffer
+	const obj = struct.read({ buf });
+	expect(obj).toEqual({ a: 1, b: 0x0302, c: 1.0 });
+
+	// 2b. Write a struct to a buffer
+	const newBuf = new Uint8Array(7);
+	struct.write({ a: 2, b: 0x0403, c: 2.0 }, { buf: newBuf });
+	expect(newBuf).toStrictEqual(
+		new Uint8Array([0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x40]),
+	);
+
+	// 2c. Overwrite a field
+	struct.proxy({ buf: newBuf }).a = 3;
+	expect(newBuf).toStrictEqual(
+		new Uint8Array([0x03, 0x03, 0x04, 0x00, 0x00, 0x00, 0x40]),
+	);
+
+	// 2d. Get size of a struct
+	expect(struct.size).toBe(7);
 });
