@@ -28,13 +28,13 @@ type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 			builder: infer Builder;
 		}
 			? Name extends string
-				? {
-						[P in Name]: Builder extends ReadonlyValueBuilder<infer T>
-							? T
-							: Builder extends ValueBuilder<infer T>
-								? T
-								: never;
-					}
+				? Builder extends ReadonlyValueBuilder<infer T>
+					? RecursiveReadonly<{ [P in Name]: T }>
+					: Builder extends WritableValueBuilder<infer T>
+						? { [P in Name]: Readonly<T> }
+						: Builder extends ProxyValueBuilder<infer T>
+							? { [P in Name]: T }
+							: never
 				: never
 			: never;
 	}>

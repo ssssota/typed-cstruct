@@ -153,7 +153,7 @@ it("char*", () => {
 		.field("str", typ.charPointerAsString)
 		.field("len", typ.u32);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
-		str: string;
+		readonly str: string;
 		len: number;
 	}>();
 	expect(struct.proxy(opts)).toEqual({ str: "Hello", len: 5 });
@@ -162,9 +162,6 @@ it("char*", () => {
 		readonly len: number;
 	}>();
 	expect(struct.read(opts)).toStrictEqual({ str: "Hello", len: 5 });
-	expect(() => {
-		struct.proxy(opts).str = "World";
-	}).toThrowError("'set' on proxy: trap returned falsish for property 'str'");
 });
 it("sized array", () => {
 	/**
@@ -317,7 +314,7 @@ it("length from field", () => {
 		.field("str", typ.pointerArrayFromLengthField(typ.char, "length"));
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		length: number;
-		str: string[];
+		readonly str: string[];
 	}>();
 	expect(struct.proxy(opts)).toEqual({
 		length: 5,
@@ -331,9 +328,6 @@ it("length from field", () => {
 		length: 5,
 		str: ["H", "e", "l", "l", "o"],
 	});
-	expect(() => {
-		struct.proxy(opts).str = ["W", "o", "r", "l", "d"];
-	}).toThrowError("'set' on proxy: trap returned falsish for property 'str'");
 	struct.proxy(opts).length = 4;
 	expect(struct.read(opts)).toStrictEqual({
 		length: 4,
@@ -394,7 +388,7 @@ it("skip", () => {
 		.field("b", typ.u8);
 	expectTypeOf(struct.proxy({ buf })).toEqualTypeOf<{
 		a: number;
-		unused: never;
+		readonly unused: never;
 		b: number;
 	}>();
 	expect(struct.proxy({ buf })).toEqual({ a: 1, b: 2 });
@@ -413,17 +407,15 @@ it("custom builder", () => {
 	 * struct {
 	 *   float pos[3];
 	 *   float rot[3];
-	 * } buf = { { 1.0, 2.0, 3.0 }, { 4.0, 5.0, 6.0 } };
+	 *   float scale[3];
+	 * } buf = { { 1.0, 2.0, 3.0 }, { 4.0, 5.0, 6.0 }, { 7.0, 8.0, 9.0 } };
 	 */
 	const buf = new Uint8Array([
-		...float(1.0),
-		...float(2.0),
-		...float(3.0),
-		...float(4.0),
-		...float(5.0),
-		...float(6.0),
+		...[...float(1.0), ...float(2.0), ...float(3.0)], // pos
+		...[...float(4.0), ...float(5.0), ...float(6.0)], // rot
+		...[...float(7.0), ...float(8.0), ...float(9.0)], // scale
 	]);
-	const xyz = typ.defineBuilder<{ x: number; y: number; z: number }>({
+	const xyzReadonly = typ.defineBuilder<{ x: number; y: number; z: number }>({
 		size: 12,
 		read: (opts, ctx) => {
 			const offset = opts.offset ?? 0;
@@ -433,22 +425,81 @@ it("custom builder", () => {
 			return { x, y, z };
 		},
 	});
-	const struct = new Struct().field("pos", xyz).field("rot", xyz);
+	const xyzWritable = typ.defineBuilder<{ x: number; y: number; z: number }>({
+		size: 12,
+		read: xyzReadonly.read,
+		write: (value, opts, ctx) => {
+			const offset = opts.offset ?? 0;
+			typ.f32.write(value.x, { ...opts, offset }, ctx);
+			typ.f32.write(value.y, { ...opts, offset: offset + 4 }, ctx);
+			typ.f32.write(value.z, { ...opts, offset: offset + 8 }, ctx);
+		},
+	});
+	const xyzProxy = typ.defineBuilder<{ x: number; y: number; z: number }>({
+		size: 12,
+		read: xyzReadonly.read,
+		proxy: (opts, ctx) => {
+			const offset = opts.offset ?? 0;
+			return new Proxy(
+				{ x: 0, y: 0, z: 0 },
+				{
+					get(target, prop) {
+						if (prop === "x") return typ.f32.read({ ...opts, offset }, ctx);
+						if (prop === "y")
+							return typ.f32.read({ ...opts, offset: offset + 4 }, ctx);
+						if (prop === "z")
+							return typ.f32.read({ ...opts, offset: offset + 8 }, ctx);
+						return Reflect.get(target, prop);
+					},
+					set(_, prop, value) {
+						if (prop === "x") typ.f32.write(value, { ...opts, offset }, ctx);
+						else if (prop === "y")
+							typ.f32.write(value, { ...opts, offset: offset + 4 }, ctx);
+						else if (prop === "z")
+							typ.f32.write(value, { ...opts, offset: offset + 8 }, ctx);
+						else return false;
+						return true;
+					},
+				},
+			);
+		},
+		write: xyzWritable.write,
+	});
+	const struct = new Struct()
+		.field("pos", xyzReadonly)
+		.field("rot", xyzWritable)
+		.field("scale", xyzProxy);
 	expectTypeOf(struct.proxy({ buf })).toEqualTypeOf<{
-		pos: { x: number; y: number; z: number };
-		rot: { x: number; y: number; z: number };
+		readonly pos: Readonly<{ x: number; y: number; z: number }>;
+		rot: Readonly<{ x: number; y: number; z: number }>;
+		scale: { x: number; y: number; z: number };
 	}>();
 	expect(struct.proxy({ buf })).toEqual({
 		pos: { x: 1, y: 2, z: 3 },
 		rot: { x: 4, y: 5, z: 6 },
+		scale: { x: 7, y: 8, z: 9 },
 	});
 	expectTypeOf(struct.read({ buf })).toEqualTypeOf<{
 		readonly pos: Readonly<{ x: number; y: number; z: number }>;
 		readonly rot: Readonly<{ x: number; y: number; z: number }>;
+		readonly scale: Readonly<{ x: number; y: number; z: number }>;
 	}>();
 	expect(struct.read({ buf })).toStrictEqual({
 		pos: { x: 1, y: 2, z: 3 },
 		rot: { x: 4, y: 5, z: 6 },
+		scale: { x: 7, y: 8, z: 9 },
+	});
+	struct.proxy({ buf }).scale.x = 10;
+	expect(struct.read({ buf })).toStrictEqual({
+		pos: { x: 1, y: 2, z: 3 },
+		rot: { x: 4, y: 5, z: 6 },
+		scale: { x: 10, y: 8, z: 9 },
+	});
+	struct.proxy({ buf }).rot = { x: 11, y: 12, z: 13 };
+	expect(struct.read({ buf })).toStrictEqual({
+		pos: { x: 1, y: 2, z: 3 },
+		rot: { x: 11, y: 12, z: 13 },
+		scale: { x: 10, y: 8, z: 9 },
 	});
 });
 it("readme sample", () => {
