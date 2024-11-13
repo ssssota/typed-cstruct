@@ -1,9 +1,9 @@
-import type { ValueBuilder, ValueBuilderOptions } from "../types.js";
+import type { ReadonlyValueBuilder, WritableValueBuilder } from "../types.js";
 import { readU32 } from "../utils.js";
 
-export const charPointerAsString: ValueBuilder<string> = {
+export const charPointerAsString: ReadonlyValueBuilder<string> = {
 	size: 4,
-	read(opts: ValueBuilderOptions) {
+	read(opts) {
 		const ptr = readU32(opts);
 		const zeorIndex = opts.buf.indexOf(0, ptr);
 		return new TextDecoder().decode(opts.buf.slice(ptr, zeorIndex));
@@ -15,15 +15,15 @@ export function sizedCharArrayAsString(
 	nullTermination = true,
 	decoder: TextDecoder = new TextDecoder(),
 	encoder: TextEncoder = new TextEncoder(),
-): ValueBuilder<string> {
+): WritableValueBuilder<string> {
 	return {
 		size,
-		read(opts: ValueBuilderOptions) {
+		read(opts) {
 			const { buf, offset = 0 } = opts;
 			const end = nullTermination ? buf.indexOf(0, offset) : offset + size;
 			return decoder.decode(buf.slice(offset, end));
 		},
-		write(value: string, opts: ValueBuilderOptions) {
+		write(value, opts) {
 			const { buf, offset = 0 } = opts;
 			const encoded = encoder.encode(value);
 			for (let i = 0; i < size; i++) {

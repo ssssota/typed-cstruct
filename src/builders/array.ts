@@ -1,10 +1,15 @@
-import type { ValueBuilder, ValueBuilderOptions } from "../types.js";
+import type {
+	ProxyValueBuilder,
+	ReadonlyValueBuilder,
+	ValueBuilder,
+	ValueBuilderOptions,
+} from "../types.js";
 import { readU32 } from "../utils.js";
 
 export function sizedArray<T>(
 	builder: ValueBuilder<T>,
 	size: number,
-): ValueBuilder<T[]> {
+): ProxyValueBuilder<T[]> {
 	const proxy = (
 		opts: ValueBuilderOptions,
 		_: Record<string, unknown>,
@@ -44,13 +49,14 @@ export function sizedArray<T>(
 	return {
 		size: size * builder.size,
 		proxy,
-		read(opts: ValueBuilderOptions) {
-			return proxy(opts, {}, false).slice();
+		read(opts, ctx) {
+			return proxy(opts, ctx, false).slice();
 		},
 		write(value, opts, ctx) {
+			if (typeof builder.write !== "function") return;
 			const { buf, offset = 0 } = opts;
 			for (let i = 0; i < size; i++) {
-				builder.write?.(
+				builder.write(
 					value[i],
 					{ buf, offset: offset + i * builder.size },
 					ctx,
@@ -62,10 +68,10 @@ export function sizedArray<T>(
 export function pointerArrayFromLengthField<T, FieldName extends string>(
 	builder: ValueBuilder<T>,
 	fieldName: FieldName,
-): ValueBuilder<T[], { [K in FieldName]: number }> {
+): ReadonlyValueBuilder<T[], { [K in FieldName]: number }> {
 	return {
 		size: 4,
-		read(opts: ValueBuilderOptions, ctx) {
+		read(opts, ctx) {
 			const ptr = readU32(opts);
 			const size = ctx[fieldName];
 			return Array.from({ length: size }, (_, i) =>

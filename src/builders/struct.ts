@@ -1,8 +1,11 @@
 import type {
 	Prettify,
+	ProxyValueBuilder,
+	ReadonlyValueBuilder,
 	RecursiveReadonly,
 	ValueBuilder,
 	ValueBuilderOptions,
+	WritableValueBuilder,
 } from "../types.js";
 
 type Field<T extends ValueBuilder = ValueBuilder> = {
@@ -22,16 +25,22 @@ type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 	TupleToUnion<{
 		[K in keyof Fields]: Fields[K] extends {
 			name: infer Name;
-			builder: ValueBuilder<infer T>;
+			builder: infer Builder;
 		}
 			? Name extends string
-				? { [P in Name]: T }
+				? {
+						[P in Name]: Builder extends ReadonlyValueBuilder<infer T>
+							? T
+							: Builder extends ValueBuilder<infer T>
+								? T
+								: never;
+					}
 				: never
 			: never;
 	}>
 >;
 
-export class Struct<Fields extends Field[] = []> implements ValueBuilder {
+export class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 	#size: number;
 	protected constructor(private fields: Fields) {
 		this.#size = this.fields.reduce((acc, f) => acc + f.builder.size, 0);

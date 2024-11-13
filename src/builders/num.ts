@@ -1,4 +1,8 @@
-import type { ValueBuilder, ValueBuilderOptions } from "../types.js";
+import type {
+	ReadonlyValueBuilder,
+	ValueBuilderOptions,
+	WritableValueBuilder,
+} from "../types.js";
 import {
 	readBool,
 	readChar,
@@ -26,62 +30,62 @@ import {
 	writeU64,
 } from "../utils.js";
 
-export const u8: ValueBuilder<number> = {
+export const u8: WritableValueBuilder<number> = {
 	size: 1,
 	read: readU8,
 	write: writeU8,
 };
-export const i8: ValueBuilder<number> = {
+export const i8: WritableValueBuilder<number> = {
 	size: 1,
 	read: readI8,
 	write: writeI8,
 };
-export const u16: ValueBuilder<number> = {
+export const u16: WritableValueBuilder<number> = {
 	size: 2,
 	read: readU16,
 	write: writeU16,
 };
-export const i16: ValueBuilder<number> = {
+export const i16: WritableValueBuilder<number> = {
 	size: 2,
 	read: readI16,
 	write: writeI16,
 };
-export const u32: ValueBuilder<number> = {
+export const u32: WritableValueBuilder<number> = {
 	size: 4,
 	read: readU32,
 	write: writeU32,
 };
-export const i32: ValueBuilder<number> = {
+export const i32: WritableValueBuilder<number> = {
 	size: 4,
 	read: readI32,
 	write: writeI32,
 };
-export const u64: ValueBuilder<bigint> = {
+export const u64: WritableValueBuilder<bigint> = {
 	size: 8,
 	read: readU64,
 	write: writeU64,
 };
-export const i64: ValueBuilder<bigint> = {
+export const i64: WritableValueBuilder<bigint> = {
 	size: 8,
 	read: readI64,
 	write: writeI64,
 };
-export const f32: ValueBuilder<number> = {
+export const f32: WritableValueBuilder<number> = {
 	size: 4,
 	read: readF32,
 	write: writeF32,
 };
-export const f64: ValueBuilder<number> = {
+export const f64: WritableValueBuilder<number> = {
 	size: 8,
 	read: readF64,
 	write: writeF64,
 };
-export const bool: ValueBuilder<boolean> = {
+export const bool: WritableValueBuilder<boolean> = {
 	size: 1,
 	read: readBool,
 	write: writeBool,
 };
-export const char: ValueBuilder<string> = {
+export const char: WritableValueBuilder<string> = {
 	size: 1,
 	read: readChar,
 	write: writeChar,
@@ -91,9 +95,9 @@ export function enumLike<
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
 	Variants extends Record<`${T}`, string> = Record<`${T}`, string>,
 >(
-	realType: ValueBuilder<T, Ctx>,
+	realType: WritableValueBuilder<T, Ctx> | ReadonlyValueBuilder<T, Ctx>,
 	variants: Variants,
-): ValueBuilder<Variants[keyof Variants], Ctx> {
+): WritableValueBuilder<Variants[keyof Variants], Ctx> {
 	return {
 		size: realType.size,
 		read(opts: ValueBuilderOptions, ctx: Ctx) {
@@ -114,12 +118,11 @@ export function enumLike<
 	};
 }
 
-export function skip(size: number): ValueBuilder<never> {
+export function skip(size: number): ReadonlyValueBuilder<never> {
 	return {
 		size,
 		read() {
 			return undefined as never;
 		},
-		write() {},
 	};
 }
