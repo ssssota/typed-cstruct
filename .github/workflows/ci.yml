@@ -7,15 +7,14 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/typed-cstruct
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - run: pnpm check
       - run: pnpm build
+        working-directory: packages/typed-cstruct
       - run: pnpm test
+        working-directory: packages/typed-cstruct
 
   coverage:
     runs-on: ubuntu-latest
