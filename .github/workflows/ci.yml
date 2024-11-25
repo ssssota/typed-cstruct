@@ -7,6 +7,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/typed-cstruct
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -16,11 +19,15 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/typed-cstruct
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - run: pnpm coverage
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
+          files: ./packages/typed-cstruct/coverage/coverage-final.json
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
