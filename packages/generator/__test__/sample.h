@@ -23,3 +23,9 @@ struct Angle
     number a;
     number b;
 };
+enum Color
+{
+    RED,
+    GREEN,
+    BLUE
+};

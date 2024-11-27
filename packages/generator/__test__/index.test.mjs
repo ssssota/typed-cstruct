@@ -16,8 +16,8 @@ export function foo() {
 }
 export function foo__bindgen_ty_1() {
   return new __typ.default()
-    .field('a', core__ffi__c_int())
-    .field('b', core__ffi__c_int())
+    .field('a', __typ.i32())
+    .field('b', __typ.i32())
 }
 export function bar() {
   return new __typ.default()
@@ -25,8 +25,8 @@ export function bar() {
 }
 export function bar__bindgen_ty_1() {
   return new __typ.default()
-    .field('a', core__ffi__c_uint())
-    .field('b', core__ffi__c_uint())
+    .field('a', __typ.u32())
+    .field('b', __typ.u32())
 }
 export function Point() {
   return new __typ.default()
@@ -38,17 +38,15 @@ export function Angle() {
     .field('a', number())
     .field('b', number())
 }
+export function Color() {
+  return __typ.enumLike({
+    BLUE: 2,
+    RED: 0,
+    GREEN: 1,
+  })
+}
 export function number() {
-  return f32();
-}
-function core__ffi__c_uint() {
-  return __typ.u32;
-}
-function core__ffi__c_int() {
-  return __typ.i32;
-}
-function f32() {
-  return __typ.f32;
+  return __typ.f32();
 }
 `,
 	);
