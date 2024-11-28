@@ -88,7 +88,7 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
     let mut result = "import * as __typ from 'typed-cstruct';\n".to_string();
     let mut created = HashSet::new();
     let mut used = HashSet::new();
-    for s in visitor.structs {
+    for s in &visitor.structs {
         let name = s.ident.to_string();
         result.push_str("export function ");
         result.push_str(&name);
@@ -133,7 +133,7 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         result.push_str("}\n");
         created.insert(name);
     }
-    for e in find_enums(&visitor.constants) {
+    for e in find_enums(&visitor) {
         result.push_str("export function ");
         result.push_str(&e.0);
         result.push_str("() {\n");
@@ -232,10 +232,19 @@ fn print_type(ty: &syn::Type) -> String {
         _ => unimplemented!("unsupported type"),
     }
 }
-fn find_enums(constants: &[&syn::ItemConst]) -> HashMap<String, HashMap<String, String>> {
+fn find_enums(visitor: &DeclarationVisitor) -> HashMap<String, HashMap<String, String>> {
     let mut enums: HashMap<String, HashMap<String, String>> = HashMap::new();
-    for c in constants {
+    let ty_candidates = &visitor
+        .types
+        .clone()
+        .into_iter()
+        .map(|t| t.ident.to_string())
+        .collect::<Vec<String>>();
+    for c in &visitor.constants {
         let ty = print_type(&c.ty);
+        if !ty_candidates.contains(&ty) {
+            continue;
+        }
         let ty_len = ty.len();
         let variant_name = c.ident.to_string()[ty_len + 1..].to_string();
         let variant_value = print_expr(&c.expr);
@@ -277,6 +286,7 @@ mod tests {
     #[test]
     fn enum_like() {
         let rust = r#"
+            pub const NOT_E: u32 = 0;
             pub const E_A: E = 0;
             pub const E_B: E = 1;
             pub type E = u32;
