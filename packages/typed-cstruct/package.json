@@ -14,7 +14,7 @@
 	"scripts": {
 		"test": "vitest",
 		"build": "tsc -p tsconfig.lib.json",
-		"clean": "node -e 'fs.rm(\"dist\",{recursive:true,force:true},()=>{})'",
+		"clean": "node -e 'fs.rmSync(`dist`,{recursive:true,force:true})'",
 		"coverage": "vitest run --coverage",
 		"prepare": "pnpm clean && pnpm build"
 	},
