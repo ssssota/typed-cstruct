@@ -1,4 +1,4 @@
-name: Setup and Install deps
+name: Setup Node.js and Install deps
 description: Setup Node.js/pnpm. Install dependencies.
 runs:
   using: 'composite'

@@ -1,0 +1,18 @@
+{
+  "name": "@typed-cstruct/generator-linux-arm-gnueabihf",
+  "version": "0.0.0",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm"
+  ],
+  "main": "generator.linux-arm-gnueabihf.node",
+  "files": [
+    "generator.linux-arm-gnueabihf.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}

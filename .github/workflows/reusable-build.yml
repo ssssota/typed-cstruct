@@ -1,0 +1,184 @@
+name: Release Build
+
+on:
+  workflow_call:
+
+jobs:
+  build-binding:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            build: pnpm --dir packages/generator build --target x86_64-apple-darwin
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            build: |
+              export CARGO_BUILD_TARGET=aarch64-apple-darwin;
+              pnpm --dir packages/generator build --target aarch64-apple-darwin
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            build: pnpm --dir packages/generator build --target x86_64-pc-windows-msvc
+
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+            build: |
+              export CARGO_BUILD_TARGET=i686-pc-windows-msvc;
+              pnpm --dir packages/generator build --target i686-pc-windows-msvc
+
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            build: |
+              export CARGO_BUILD_TARGET=aarch64-pc-windows-msvc;
+              pnpm --dir packages/generator build --target aarch64-pc-windows-msvc
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: |
+              export CARGO_BUILD_TARGET=x86_64-unknown-linux-gnu;
+              export CC=clang;
+              pnpm --dir packages/generator build --target x86_64-unknown-linux-gnu --use-napi-cross
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            build: pnpm --dir packages/generator build --target x86_64-unknown-linux-musl -x
+
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            build: |
+              export CARGO_BUILD_TARGET=aarch64-unknown-linux-gnu;
+              export CC=clang;
+              pnpm --dir packages/generator build --use-napi-cross --target aarch64-unknown-linux-gnu
+
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            build: |
+              export CARGO_BUILD_TARGET=armv7-unknown-linux-gnueabihf;
+              export CC=clang;
+              pnpm --dir packages/generator build --target armv7-unknown-linux-gnueabihf --use-napi-cross
+
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            build: |
+              export CARGO_BUILD_TARGET=aarch64-unknown-linux-musl;
+              pnpm --dir packages/generator build -x --target aarch64-unknown-linux-musl
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          cache-key: release-build
+
+      - name: Rustup Adds Target
+        run: rustup target add ${{ matrix.target }}
+
+      - uses: goto-bus-stop/setup-zig@v2
+        if: ${{ contains(matrix.target, 'musl') }}
+        with:
+          version: 0.13.0
+
+      - uses: taiki-e/install-action@v2
+        if: ${{ contains(matrix.target, 'musl') }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tool: cargo-zigbuild
+
+      # https://github.com/nodejs/node-gyp/issues/2869
+      - name: Setup python
+        run: pip install setuptools
+        if: ${{ matrix.os == 'macos-latest' }}
+
+      - name: Setup Node
+        uses: ./.github/actions/setup-node
+
+      - name: Build Binding
+        run: ${{ matrix.build }}
+        shell: bash
+
+      - name: Upload Binding Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: bindings-${{ matrix.target }}
+          path: |
+            packages/rolldown/src/rolldown-binding.*.node
+            packages/rolldown/src/rolldown-binding.*.wasm
+
+  build-freebsd:
+    name: Build FreeBSD
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        id: build
+        uses: cross-platform-actions/action@v0.25.0
+        env:
+          DEBUG: napi:*
+          RUSTUP_IO_THREADS: 1
+        with:
+          operating_system: freebsd
+          version: '14.1'
+          environment_variables: 'DEBUG RUSTUP_IO_THREADS'
+          shell: bash
+          run: |
+            sudo pkg install -y -f curl node libnghttp2 npm
+            curl https://sh.rustup.rs -sSf --output rustup.sh
+            sh rustup.sh -y --profile minimal --default-toolchain stable
+            source "$HOME/.cargo/env"
+            echo "~~~~ rustc --version ~~~~"
+            rustc --version
+            echo "~~~~ node -v ~~~~"
+            node -v
+            pwd
+            ls -lah
+            whoami
+            env
+            sudo corepack enable
+            pnpm install
+            pnpm --dir packages/generator build --target x86_64-unknown-freebsd
+            rm -rf node_modules
+            rm -rf target
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-x86_64-unknown-freebsd
+          path: ./packages/rolldown/src/rolldown-binding.*.node
+          if-no-files-found: error
+
+  build-node-packages:
+    strategy:
+      fail-fast: false
+    name: Build Node Package
+    runs-on: ubuntu-latest
+    env:
+      RELEASING: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: ./.github/actions/setup-node
+
+      - name: Build Node binding
+        # This binary is only used to build the node package itself. It's won't be published.
+        run: pnpm --filter rolldown build-binding
+
+      - name: Build Node Packages
+        # Binaries are built in the previous steps. Unlike in local development, we only need to build the node package itself.
+        run: pnpm --filter rolldown build-node
+
+      - name: Build Type Definitions
+        run: pnpm --filter rolldown build-types
+
+      - name: Upload Node Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: node-artifact
+          path: packages/rolldown/dist/**

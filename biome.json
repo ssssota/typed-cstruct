@@ -7,7 +7,12 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": ["packages/typed-cstruct/dist", "packages/typed-cstruct/coverage"]
+		"ignore": [
+			"packages/typed-cstruct/dist",
+			"packages/typed-cstruct/coverage",
+			"packages/generator/index.*",
+			"packages/generator/npm"
+		]
 	},
 	"formatter": {
 		"enabled": true,

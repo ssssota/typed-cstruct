@@ -427,6 +427,37 @@ it("skip", () => {
 	}>();
 	expect(struct.read(opts)).toStrictEqual({ a: 1, b: 2, unused: undefined });
 });
+it("ptr", () => {
+	/**
+	 * ```c
+	 * struct {
+	 *   uint8_t *a;
+	 *   uint8_t b;
+	 * } buf = { 0x05, 0x00, 0x00, 0x00, 0x01 };
+	 * ```
+	 */
+	const buf = new Uint8Array([0x05, 0x00, 0x00, 0x00, 0x01, 0x02]);
+	const opts = { buf };
+	const struct = new Struct().field("a", typ.ptr(typ.u8)).field("b", typ.u8);
+	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
+		a: number | null;
+		b: number;
+	}>();
+	expect(struct.proxy(opts)).toEqual({ a: 2, b: 1 });
+	expectTypeOf(struct.read(opts)).toEqualTypeOf<{
+		readonly a: number | null;
+		readonly b: number;
+	}>();
+	expect(struct.read(opts)).toStrictEqual({ a: 2, b: 1 });
+	struct.proxy(opts).a = 3;
+	expect(struct.read(opts)).toStrictEqual({ a: 3, b: 1 });
+	expect(buf).toStrictEqual(
+		new Uint8Array([0x05, 0x00, 0x00, 0x00, 0x01, 0x03]),
+	);
+	expect(() => {
+		struct.proxy(opts).a = null;
+	}).throws("Cannot write null pointer");
+});
 it("custom builder", () => {
 	const float = (value: number) =>
 		new Uint8Array(new Float32Array([value]).buffer);
