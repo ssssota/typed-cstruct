@@ -1,0 +1,22 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-build.yml
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages/generator
+      - run: pnpm --dir packages/generator move-binaries
+      - run: pnpm --dir packages/generator run version
+      - run: pnpm --dir packages/generator -r publish --dry-run 
