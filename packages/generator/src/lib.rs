@@ -127,7 +127,19 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
                         used.insert(ty);
                     }
                 }
-                _ => unimplemented!("currently unsupported type"),
+                syn::Type::Ptr(ref p) => {
+                    let ty = print_type(&p.elem);
+                    result.push_str("    .field('");
+                    result.push_str(&f.ident.as_ref().unwrap().to_string());
+                    result.push_str("', ");
+                    result.push_str("__typ.ptr(");
+                    result.push_str(well_known_or(&ty));
+                    result.push_str("))\n");
+                    if !WELL_KNOWN_TYPES.contains_key(&ty) {
+                        used.insert(ty);
+                    }
+                }
+                _ => unimplemented!("Unsupported field type"),
             }
         }
         result.push_str("}\n");
@@ -290,6 +302,15 @@ mod tests {
             pub const E_A: E = 0;
             pub const E_B: E = 1;
             pub type E = u32;
+        "#;
+        let ts = rust_to_ts(rust).unwrap();
+        insta::assert_snapshot!(ts);
+    }
+
+    #[test]
+    fn pointer() {
+        let rust = r#"
+            struct A { a: *const i32 }
         "#;
         let ts = rust_to_ts(rust).unwrap();
         insta::assert_snapshot!(ts);

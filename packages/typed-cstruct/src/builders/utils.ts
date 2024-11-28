@@ -2,8 +2,10 @@ import type {
 	ProxyValueBuilder,
 	ReadonlyValueBuilder,
 	ValueBuilder,
+	ValueBuilderOptions,
 	WritableValueBuilder,
 } from "../types.js";
+import { readU32 } from "../utils.js";
 export function defineBuilder<
 	T,
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
@@ -42,4 +44,28 @@ export function convert<T, U>(
 			return convert(builder.read(opts, ctx));
 		},
 	};
+}
+
+export function ptr<T>(
+	builder: ReadonlyValueBuilder<T>,
+): ReadonlyValueBuilder<T | null>;
+export function ptr<T>(
+	builder: WritableValueBuilder<T>,
+): WritableValueBuilder<T | null>;
+export function ptr<T>(builder: ValueBuilder<T>): ValueBuilder<T | null> {
+	const read = (opts: ValueBuilderOptions) => {
+		const p = readU32(opts);
+		if (p === 0) return null;
+		return builder.read({ ...opts, offset: p }, {});
+	};
+	const write = builder.write
+		? (value: T, opts: ValueBuilderOptions) => {
+				if (value === null) throw new Error("Cannot write null pointer");
+				const p = readU32(opts);
+				if (p === 0) throw new Error("Cannot write to null pointer");
+				builder.write?.(value, { ...opts, offset: p }, {});
+			}
+		: undefined;
+
+	return { size: 4, read, write };
 }
