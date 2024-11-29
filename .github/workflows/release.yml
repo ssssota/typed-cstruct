@@ -16,7 +16,9 @@ jobs:
       - uses: ./.github/actions/setup-node
       - uses: actions/download-artifact@v4
         with:
-          name: packages/generator
+          path: packages/generator
+      - run: ls packages/generator
       - run: pnpm --dir packages/generator move-binaries
+      - run: ls -R packages/generator/npm
       - run: pnpm --dir packages/generator run version
       - run: pnpm --dir packages/generator -r publish --dry-run 
