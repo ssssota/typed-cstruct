@@ -39,11 +39,11 @@
 		"node": ">= 10"
 	},
 	"scripts": {
+		"artifacts": "napi artifacts",
 		"build": "napi build --platform --release",
 		"build:debug": "napi build --platform",
 		"prepublishOnly": "napi prepublish -t npm",
 		"test": "node --test",
-		"version": "napi version",
-		"move-binaries": "node ./scripts/move-binaries.mjs"
+		"version": "napi version"
 	}
 }
