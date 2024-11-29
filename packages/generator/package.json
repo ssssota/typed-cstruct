@@ -1,66 +1,49 @@
 {
-  "name": "@typed-cstruct/generator",
-  "version": "0.0.1",
-  "main": "index.js",
-  "module": "index.mjs",
-  "types": "index.d.ts",
-  "bin": {
-    "tcgen": "bin.js",
-    "@typed-cstruct/generator": "bin.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "import": "./index.mjs",
-      "default": "./index.js"
-    }
-  },
-  "napi": {
-    "name": "generator",
-    "triples": {
-      "additional": [
-        "aarch64-apple-darwin",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-unknown-linux-musl",
-        "aarch64-pc-windows-msvc",
-        "armv7-unknown-linux-gnueabihf",
-        "x86_64-unknown-linux-musl",
-        "x86_64-unknown-freebsd",
-        "i686-pc-windows-msvc"
-      ]
-    }
-  },
-  "files": [
-    "index.js",
-    "index.d.ts",
-    "bin.js"
-  ],
-  "license": "MIT",
-  "devDependencies": {
-    "@napi-rs/cli": "^2.18.4"
-  },
-  "engines": {
-    "node": ">= 10"
-  },
-  "scripts": {
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
-    "test": "node --test",
-    "version": "napi version",
-    "move-binaries": "node ./scripts/move-binaries.mjs"
-  },
-  "optionalDependencies": {
-    "@typed-cstruct/generator-win32-x64-msvc": "0.0.1",
-    "@typed-cstruct/generator-darwin-x64": "0.0.1",
-    "@typed-cstruct/generator-linux-x64-gnu": "0.0.1",
-    "@typed-cstruct/generator-darwin-arm64": "0.0.1",
-    "@typed-cstruct/generator-linux-arm64-gnu": "0.0.1",
-    "@typed-cstruct/generator-linux-arm64-musl": "0.0.1",
-    "@typed-cstruct/generator-win32-arm64-msvc": "0.0.1",
-    "@typed-cstruct/generator-linux-arm-gnueabihf": "0.0.1",
-    "@typed-cstruct/generator-linux-x64-musl": "0.0.1",
-    "@typed-cstruct/generator-freebsd-x64": "0.0.1",
-    "@typed-cstruct/generator-win32-ia32-msvc": "0.0.1"
-  }
+	"name": "@typed-cstruct/generator",
+	"version": "0.0.1",
+	"main": "index.js",
+	"module": "index.mjs",
+	"types": "index.d.ts",
+	"bin": {
+		"tcgen": "bin.js",
+		"@typed-cstruct/generator": "bin.js"
+	},
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"import": "./index.mjs",
+			"default": "./index.js"
+		}
+	},
+	"napi": {
+		"name": "generator",
+		"triples": {
+			"additional": [
+				"aarch64-apple-darwin",
+				"aarch64-unknown-linux-gnu",
+				"aarch64-unknown-linux-musl",
+				"aarch64-pc-windows-msvc",
+				"armv7-unknown-linux-gnueabihf",
+				"x86_64-unknown-linux-musl",
+				"x86_64-unknown-freebsd",
+				"i686-pc-windows-msvc"
+			]
+		}
+	},
+	"files": ["index.js", "index.d.ts", "bin.js"],
+	"license": "MIT",
+	"devDependencies": {
+		"@napi-rs/cli": "^2.18.4"
+	},
+	"engines": {
+		"node": ">= 10"
+	},
+	"scripts": {
+		"build": "napi build --platform --release",
+		"build:debug": "napi build --platform",
+		"prepublishOnly": "napi prepublish -t npm",
+		"test": "node --test",
+		"version": "napi version",
+		"move-binaries": "node ./scripts/move-binaries.mjs"
+	}
 }
