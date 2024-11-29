@@ -5,7 +5,7 @@ expression: ts
 import * as __typ from 'typed-cstruct';
 export function E() {
   return __typ.enumLike({
-    B: 1,
     A: 0,
+    B: 1,
   })
 }

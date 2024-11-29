@@ -5,5 +5,5 @@ expression: ts
 import * as __typ from 'typed-cstruct';
 export function A() {
   return new __typ.default()
-    .field('a', __typ.sizedArray(__typ.i32,3))
+    .field('a', __typ.ptr(__typ.sizedArray(__typ.i32,3)))
 }

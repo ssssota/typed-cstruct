@@ -52,8 +52,11 @@ static WELL_KNOWN_TYPES: phf::Map<&'static str, &'static str> = phf_map! {
     "isize" => "__typ.i32",
     "usize" => "__typ.u32",
 };
-fn well_known_or(ty: &str) -> &str {
-    WELL_KNOWN_TYPES.get(ty).copied().unwrap_or(ty)
+fn well_known_or(ty: &str) -> String {
+    WELL_KNOWN_TYPES
+        .get(ty)
+        .map(|s| s.to_string())
+        .unwrap_or(format!("{ty}()"))
 }
 
 #[napi]
@@ -95,51 +98,16 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         result.push_str("() {\n");
         result.push_str("  return new __typ.default()\n");
         for f in &s.fields {
-            match &f.ty {
-                syn::Type::Path(ref p) => {
-                    let ty = p
-                        .path
-                        .segments
-                        .iter()
-                        .map(|s| s.ident.to_string())
-                        .collect::<Vec<String>>()
-                        .join("__");
-                    result.push_str("    .field('");
-                    result.push_str(&f.ident.as_ref().unwrap().to_string());
-                    result.push_str("', ");
-                    result.push_str(well_known_or(&ty));
-                    result.push_str("())\n");
-                    if !WELL_KNOWN_TYPES.contains_key(&ty) {
-                        used.insert(ty);
-                    }
+            result.push_str("    .field('");
+            result.push_str(&f.ident.as_ref().unwrap().to_string());
+            result.push_str("', ");
+            let (ty, used2) = print_type(&f.ty);
+            result.push_str(&ty);
+            result.push_str(")\n");
+            for u in used2 {
+                if !WELL_KNOWN_TYPES.contains_key(&u) {
+                    used.insert(u);
                 }
-                syn::Type::Array(ref a) => {
-                    let ty = print_type(&a.elem);
-                    result.push_str("    .field('");
-                    result.push_str(&f.ident.as_ref().unwrap().to_string());
-                    result.push_str("', ");
-                    result.push_str("__typ.sizedArray(");
-                    result.push_str(well_known_or(&ty));
-                    result.push_str(", ");
-                    result.push_str(&print_expr(&a.len));
-                    result.push_str("))\n");
-                    if !WELL_KNOWN_TYPES.contains_key(&ty) {
-                        used.insert(ty);
-                    }
-                }
-                syn::Type::Ptr(ref p) => {
-                    let ty = print_type(&p.elem);
-                    result.push_str("    .field('");
-                    result.push_str(&f.ident.as_ref().unwrap().to_string());
-                    result.push_str("', ");
-                    result.push_str("__typ.ptr(");
-                    result.push_str(well_known_or(&ty));
-                    result.push_str("))\n");
-                    if !WELL_KNOWN_TYPES.contains_key(&ty) {
-                        used.insert(ty);
-                    }
-                }
-                _ => unimplemented!("Unsupported field type"),
             }
         }
         result.push_str("}\n");
@@ -151,11 +119,7 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         result.push_str("() {\n");
         result.push_str("  return __typ.enumLike({\n");
         for (k, v) in e.1 {
-            result.push_str("    ");
-            result.push_str(&k);
-            result.push_str(": ");
-            result.push_str(&v);
-            result.push_str(",\n");
+            result.push_str(format!("    {k}: {v},\n").as_str());
         }
         result.push_str("  })\n");
         result.push_str("}\n");
@@ -168,18 +132,20 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         .collect::<Vec<&&syn::ItemType>>();
     for a in not_created_types {
         let name = a.ident.to_string();
-        let ty = print_type(&a.ty);
+        let (ty, used2) = print_type(&a.ty);
         result.push_str("export function ");
         result.push_str(&name);
         result.push_str("() {\n");
         result.push_str("  return ");
-        result.push_str(well_known_or(&ty));
-        result.push_str("();\n");
-        if !WELL_KNOWN_TYPES.contains_key(&ty) {
-            used.insert(ty);
-        }
+        result.push_str(&ty);
+        result.push_str(";\n");
         result.push_str("}\n");
         created.insert(name);
+        for u in used2 {
+            if !WELL_KNOWN_TYPES.contains_key(&u) {
+                used.insert(u);
+            }
+        }
     }
     let used_but_not_created = used.difference(&created);
     if used_but_not_created.count() > 0 {
@@ -232,15 +198,29 @@ fn print_expr(expr: &syn::Expr) -> String {
         _ => unimplemented!("unsupported expression"),
     }
 }
-fn print_type(ty: &syn::Type) -> String {
+fn print_type(ty: &syn::Type) -> (String, Vec<String>) {
     match ty {
-        syn::Type::Path(ref p) => p
-            .path
-            .segments
-            .iter()
-            .map(|s| s.ident.to_string())
-            .collect::<Vec<String>>()
-            .join("__"),
+        syn::Type::Path(ref p) => {
+            let ty = p
+                .path
+                .segments
+                .iter()
+                .map(|s| s.ident.to_string())
+                .collect::<Vec<String>>()
+                .join("__");
+            (well_known_or(&ty), vec![ty])
+        }
+        syn::Type::Array(ref a) => {
+            let (ty, used) = print_type(&a.elem);
+            (
+                format!("__typ.sizedArray({},{})", &ty, &print_expr(&a.len)),
+                used,
+            )
+        }
+        syn::Type::Ptr(ref p) => {
+            let (ty, used) = print_type(&p.elem);
+            (format!("__typ.ptr({})", &ty), used)
+        }
         _ => unimplemented!("unsupported type"),
     }
 }
@@ -253,19 +233,24 @@ fn find_enums(visitor: &DeclarationVisitor) -> HashMap<String, HashMap<String, S
         .map(|t| t.ident.to_string())
         .collect::<Vec<String>>();
     for c in &visitor.constants {
-        let ty = print_type(&c.ty);
-        if !ty_candidates.contains(&ty) {
-            continue;
-        }
-        let ty_len = ty.len();
-        let variant_name = c.ident.to_string()[ty_len + 1..].to_string();
-        let variant_value = print_expr(&c.expr);
-        if let Some(e) = enums.get_mut(&ty) {
-            e.insert(variant_name, variant_value);
-        } else {
-            let mut e = HashMap::new();
-            e.insert(variant_name, variant_value);
-            enums.insert(ty, e);
+        if let syn::Type::Path(ref p) = *c.ty {
+            if p.path.segments.len() != 1 {
+                continue;
+            }
+            let ty = p.path.segments[0].ident.to_string();
+            if !ty_candidates.contains(&ty) {
+                continue;
+            }
+            let ty_len = ty.len();
+            let variant_name = c.ident.to_string()[ty_len + 1..].to_string();
+            let variant_value = print_expr(&c.expr);
+            if let Some(e) = enums.get_mut(&ty) {
+                e.insert(variant_name, variant_value);
+            } else {
+                let mut e = HashMap::new();
+                e.insert(variant_name, variant_value);
+                enums.insert(ty, e);
+            }
         }
     }
     enums
@@ -311,6 +296,33 @@ mod tests {
     fn pointer() {
         let rust = r#"
             struct A { a: *const i32 }
+        "#;
+        let ts = rust_to_ts(rust).unwrap();
+        insta::assert_snapshot!(ts);
+    }
+
+    #[test]
+    fn pointer_array() {
+        let rust = r#"
+            struct A { a: [*const i32; 3] }
+        "#;
+        let ts = rust_to_ts(rust).unwrap();
+        insta::assert_snapshot!(ts);
+    }
+
+    #[test]
+    fn array_pointer() {
+        let rust = r#"
+            struct A { a: *mut [i32; 3] }
+        "#;
+        let ts = rust_to_ts(rust).unwrap();
+        insta::assert_snapshot!(ts);
+    }
+
+    #[test]
+    fn nested_array() {
+        let rust = r#"
+            struct A { a: [[i32; 3]; 3] }
         "#;
         let ts = rust_to_ts(rust).unwrap();
         insta::assert_snapshot!(ts);
