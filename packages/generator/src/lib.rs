@@ -1,12 +1,16 @@
 use std::collections::{HashMap, HashSet};
 
 use napi::bindgen_prelude::*;
-use phf::phf_map;
+use phf::{phf_map, phf_set};
 use syn::visit::Visit;
 
 #[macro_use]
 extern crate napi_derive;
 
+static IGNORE_TYPES: phf::Set<&'static str> = phf_set! {
+    "__BindgenBitfieldUnit",
+    "__BindgenUnionField",
+};
 static WELL_KNOWN_TYPES: phf::Map<&'static str, &'static str> = phf_map! {
     // https://doc.rust-lang.org/core/ffi/index.html#types
     // c_char Equivalent to C’s `char` type.
@@ -36,6 +40,11 @@ static WELL_KNOWN_TYPES: phf::Map<&'static str, &'static str> = phf_map! {
     // c_ushort Equivalent to C’s `unsigned short` type.
     "core__ffi__c_ushort" => "__typ.u16",
 
+    // Unknown
+    // Equivalent to C’s void type when used as a pointer.
+    "core__ffi__c_void" => "__typ.u32",
+    "core__option__Option" => "__typ.u32",
+
     // https://doc.rust-lang.org/std/index.html#primitives
     "bool" => "__typ.bool",
     "char" => "__typ.u8",
@@ -45,10 +54,12 @@ static WELL_KNOWN_TYPES: phf::Map<&'static str, &'static str> = phf_map! {
     "i16" => "__typ.i16",
     "i32" => "__typ.i32",
     "i64" => "__typ.i64",
+    "i128" => "__typ.i128",
     "u8" => "__typ.u8",
     "u16" => "__typ.u16",
     "u32" => "__typ.u32",
     "u64" => "__typ.u64",
+    "u128" => "__typ.u128",
     "isize" => "__typ.i32",
     "usize" => "__typ.u32",
 };
@@ -97,25 +108,30 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
     let mut used = HashSet::new();
     for s in &visitor.structs {
         let name = s.ident.to_string();
+        if IGNORE_TYPES.contains(&name.as_str()) {
+            continue;
+        }
         result.push_str("export function ");
         result.push_str(&name);
         result.push_str("() {\n");
         result.push_str("  return new __typ.default()\n");
-        for f in &s.fields {
-            result.push_str("    .field('");
-            result.push_str(&f.ident.as_ref().unwrap().to_string());
-            result.push_str("', ");
-            let (ty, used2) = print_type(&f.ty);
-            result.push_str(&ty);
-            result.push_str(")\n");
-            for u in used2 {
-                if !WELL_KNOWN_TYPES.contains_key(&u) {
-                    used.insert(u);
+        if let syn::Fields::Named(named_fields) = &s.fields {
+            for f in &named_fields.named {
+                let (ty, used2) = print_type(&f.ty);
+                result.push_str("    .field('");
+                result.push_str(&f.ident.as_ref().unwrap().to_string());
+                result.push_str("', ");
+                result.push_str(&ty);
+                result.push_str(")\n");
+                for u in used2 {
+                    if !WELL_KNOWN_TYPES.contains_key(&u) {
+                        used.insert(u);
+                    }
                 }
             }
+            created.insert(name);
         }
         result.push_str("}\n");
-        created.insert(name);
     }
     for e in find_enums(&visitor) {
         result.push_str("export function ");
@@ -152,8 +168,14 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         }
     }
     let used_but_not_created = used.difference(&created);
-    if used_but_not_created.count() > 0 {
-        return Err(err("used but not created"));
+    let used_but_not_created = used_but_not_created
+        .filter(|u| !IGNORE_TYPES.contains(&u.as_str()))
+        .collect::<Vec<&String>>();
+    if used_but_not_created.len() > 0 {
+        return Err(err(format!(
+            "used but not created: {:?}",
+            used_but_not_created,
+        )));
     }
 
     Ok(result)
@@ -199,7 +221,14 @@ fn print_expr(expr: &syn::Expr) -> String {
             syn::Lit::Int(ref i) => i.base10_digits().to_string(),
             _ => unimplemented!("unsupported literal"),
         },
-        _ => unimplemented!("unsupported expression"),
+        syn::Expr::Unary(ref u) => {
+            let op = match u.op {
+                syn::UnOp::Neg(_) => "-",
+                _ => unimplemented!("unsupported unary operator"),
+            };
+            format!("{}{}", op, print_expr(&u.expr))
+        }
+        _ => unimplemented!("unsupported expr"),
     }
 }
 fn print_type(ty: &syn::Type) -> (String, Vec<String>) {
