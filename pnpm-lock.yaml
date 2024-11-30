@@ -20,9 +20,6 @@ importers:
       '@typed-cstruct/generator-darwin-x64':
         specifier: workspace:*
         version: link:npm/darwin-x64
-      '@typed-cstruct/generator-freebsd-x64':
-        specifier: workspace:*
-        version: link:npm/freebsd-x64
       '@typed-cstruct/generator-linux-arm-gnueabihf':
         specifier: workspace:*
         version: link:npm/linux-arm-gnueabihf
@@ -55,8 +52,6 @@ importers:
   packages/generator/npm/darwin-arm64: {}
 
   packages/generator/npm/darwin-x64: {}
-
-  packages/generator/npm/freebsd-x64: {}
 
   packages/generator/npm/linux-arm-gnueabihf: {}
 
