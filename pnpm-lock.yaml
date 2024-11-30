@@ -13,10 +13,66 @@ importers:
         version: 1.9.4
 
   packages/generator:
+    optionalDependencies:
+      '@typed-cstruct/generator-darwin-arm64':
+        specifier: workspace:*
+        version: link:npm/darwin-arm64
+      '@typed-cstruct/generator-darwin-x64':
+        specifier: workspace:*
+        version: link:npm/darwin-x64
+      '@typed-cstruct/generator-freebsd-x64':
+        specifier: workspace:*
+        version: link:npm/freebsd-x64
+      '@typed-cstruct/generator-linux-arm-gnueabihf':
+        specifier: workspace:*
+        version: link:npm/linux-arm-gnueabihf
+      '@typed-cstruct/generator-linux-arm64-gnu':
+        specifier: workspace:*
+        version: link:npm/linux-arm64-gnu
+      '@typed-cstruct/generator-linux-arm64-musl':
+        specifier: workspace:*
+        version: link:npm/linux-arm64-musl
+      '@typed-cstruct/generator-linux-x64-gnu':
+        specifier: workspace:*
+        version: link:npm/linux-x64-gnu
+      '@typed-cstruct/generator-linux-x64-musl':
+        specifier: workspace:*
+        version: link:npm/linux-x64-musl
+      '@typed-cstruct/generator-win32-arm64-msvc':
+        specifier: workspace:*
+        version: link:npm/win32-arm64-msvc
+      '@typed-cstruct/generator-win32-ia32-msvc':
+        specifier: workspace:*
+        version: link:npm/win32-ia32-msvc
+      '@typed-cstruct/generator-win32-x64-msvc':
+        specifier: workspace:*
+        version: link:npm/win32-x64-msvc
     devDependencies:
       '@napi-rs/cli':
         specifier: ^2.18.4
         version: 2.18.4
+
+  packages/generator/npm/darwin-arm64: {}
+
+  packages/generator/npm/darwin-x64: {}
+
+  packages/generator/npm/freebsd-x64: {}
+
+  packages/generator/npm/linux-arm-gnueabihf: {}
+
+  packages/generator/npm/linux-arm64-gnu: {}
+
+  packages/generator/npm/linux-arm64-musl: {}
+
+  packages/generator/npm/linux-x64-gnu: {}
+
+  packages/generator/npm/linux-x64-musl: {}
+
+  packages/generator/npm/win32-arm64-msvc: {}
+
+  packages/generator/npm/win32-ia32-msvc: {}
+
+  packages/generator/npm/win32-x64-msvc: {}
 
   packages/typed-cstruct:
     devDependencies:

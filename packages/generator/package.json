@@ -42,8 +42,20 @@
 		"artifacts": "napi artifacts",
 		"build": "napi build --platform --release",
 		"build:debug": "napi build --platform",
-		"prepublishOnly": "napi prepublish -t npm",
 		"test": "node --test",
 		"version": "napi version"
+	},
+	"optionalDependencies": {
+		"@typed-cstruct/generator-darwin-arm64": "workspace:*",
+		"@typed-cstruct/generator-darwin-x64": "workspace:*",
+		"@typed-cstruct/generator-freebsd-x64": "workspace:*",
+		"@typed-cstruct/generator-linux-arm-gnueabihf": "workspace:*",
+		"@typed-cstruct/generator-linux-arm64-gnu": "workspace:*",
+		"@typed-cstruct/generator-linux-arm64-musl": "workspace:*",
+		"@typed-cstruct/generator-linux-x64-gnu": "workspace:*",
+		"@typed-cstruct/generator-linux-x64-musl": "workspace:*",
+		"@typed-cstruct/generator-win32-arm64-msvc": "workspace:*",
+		"@typed-cstruct/generator-win32-ia32-msvc": "workspace:*",
+		"@typed-cstruct/generator-win32-x64-msvc": "workspace:*"
 	}
 }

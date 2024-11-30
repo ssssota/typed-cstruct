@@ -1,14 +1,17 @@
 name: Release
 on:
   push:
-    branches:
-      - main
+    tags:
+      - '@typed-cstruct/generator@v*'
 
 jobs:
   build:
     uses: ./.github/workflows/reusable-build.yml
   release:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/generator
     needs:
       - build
     steps:
@@ -17,7 +20,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: packages/generator/artifacts
-      - run: pnpm --dir packages/generator artifacts
-      - run: ls -R packages/generator/npm
-      - run: pnpm --dir packages/generator run version
-      - run: pnpm --dir packages/generator -r publish --dry-run 
+      - run: pnpm artifacts
+      - run: ls -R ./npm
+      - run: pnpm run version
+      - run: pnpm -r publish
