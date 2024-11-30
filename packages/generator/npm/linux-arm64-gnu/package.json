@@ -1,6 +1,10 @@
 {
   "name": "@typed-cstruct/generator-linux-arm64-gnu",
   "version": "0.0.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ssssota/typed-cstruct.git"
+	},
   "os": [
     "linux"
   ],
