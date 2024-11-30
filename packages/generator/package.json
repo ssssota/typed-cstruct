@@ -1,6 +1,6 @@
 {
 	"name": "@typed-cstruct/generator",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
@@ -30,8 +30,12 @@
 			]
 		}
 	},
-	"files": ["index.js", "index.d.ts", "bin.js"],
+	"files": ["index.js", "index.mjs", "index.d.ts", "bin.js"],
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ssssota/typed-cstruct.git"
+	},
 	"devDependencies": {
 		"@napi-rs/cli": "^2.18.4"
 	},

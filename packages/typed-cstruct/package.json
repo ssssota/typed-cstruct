@@ -22,6 +22,10 @@
 	"files": ["dist"],
 	"author": "TOMIKAWA Sotaro <tommysouta@gmail.com>",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ssssota/typed-cstruct.git"
+	},
 	"devDependencies": {
 		"@vitest/coverage-v8": "^2.1.5",
 		"typescript": "^5.6.3",
