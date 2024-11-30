@@ -1,12 +1,11 @@
 {
 	"name": "@typed-cstruct/generator",
-	"version": "0.0.8",
+	"version": "0.1.0",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
 	"bin": {
-		"tcgen": "bin.js",
-		"@typed-cstruct/generator": "bin.js"
+		"tcgen": "bin.js"
 	},
 	"exports": {
 		".": {

@@ -10,6 +10,10 @@ const { values, positionals } = parseArgs({
 			multiple: true,
 			default: [],
 		},
+		"dump-rust-code": {
+			type: "boolean",
+			default: false,
+		},
 		help: {
 			type: "boolean",
 		},
@@ -34,7 +38,10 @@ if (values.header.length === 0) {
 	process.exit(1);
 }
 
-fs.writeFileSync(positionals[0], generate(values.header));
+fs.writeFileSync(
+	positionals[0],
+	generate(values.header, values["dump-rust-code"]),
+);
 
 function help() {
 	console.log("Usage: generator [options] <file>");

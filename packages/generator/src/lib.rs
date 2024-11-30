@@ -60,7 +60,7 @@ fn well_known_or(ty: &str) -> String {
 }
 
 #[napi]
-pub fn generate(headers: Vec<String>) -> Result<String> {
+pub fn generate(headers: Vec<String>, dump_rust_code: Option<bool>) -> Result<String> {
     let bindings = bindgen::builder()
         .disable_header_comment()
         .layout_tests(false)
@@ -78,6 +78,10 @@ pub fn generate(headers: Vec<String>) -> Result<String> {
     bindings.write(Box::new(&mut buf)).map_err(err)?;
 
     let rust = String::from_utf8(buf).map_err(err)?;
+
+    if dump_rust_code.unwrap_or(false) {
+        println!("{}\n", rust);
+    }
 
     // Ok(rust)
     rust_to_ts(&rust)
