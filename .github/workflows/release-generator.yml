@@ -24,3 +24,5 @@ jobs:
       - run: ls -R ./npm
       - run: pnpm run version
       - run: pnpm -r publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
