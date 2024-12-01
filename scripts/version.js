@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 
@@ -10,6 +10,31 @@ const packages = {
 	"typed-cstruct": "packages/typed-cstruct/package.json",
 	"@typed-cstruct/generator": "packages/generator/package.json",
 };
+/** @type {Record<Package, string>} */
+const tagPrefix = {
+	"typed-cstruct": "",
+	"@typed-cstruct/generator": "@typed-cstruct/generator",
+};
+
+main();
+function main() {
+	const { positionals } = parseArgs({ allowPositionals: true });
+
+	const packageName = validatePackage(positionals[0]);
+	const versionType = validateVersionType(positionals[1]);
+
+	if (!packageName || !versionType) {
+		console.error("pnpm bump <package> <versionType>");
+		process.exit(1);
+	}
+	if (dirty()) {
+		console.error("Working directory is dirty");
+		process.exit(1);
+	}
+
+	const version = updateVersion(packageName, versionType);
+	commit(packageName, version);
+}
 
 /** @returns {VersionType | undefined} */
 function validateVersionType(maybeVersion) {
@@ -34,38 +59,49 @@ function validatePackage(maybePackage) {
 /**
  * @param {Package} packageName
  * @param {VersionType} versionType
+ * @returns {string} new version
  */
 function updateVersion(name, versionType) {
 	const packagePath = packages[name];
 	const packageJson = readFileSync(packagePath, "utf8");
+	let newVersion;
 	const updated = packageJson.replace(
 		/"version":\s*"(\d+)\.(\d+)\.(\d+)"/,
 		(_, major, minor, patch) => {
 			switch (versionType) {
 				case "major":
-					return `"version": "${Number(major) + 1}.0.0"`;
+					newVersion = `"version": "${Number(major) + 1}.0.0"`;
+					break;
 				case "minor":
-					return `"version": "${major}.${Number(minor) + 1}.0"`;
+					newVersion = `"version": "${major}.${Number(minor) + 1}.0"`;
+					break;
 				case "patch":
-					return `"version": "${major}.${minor}.${Number(patch) + 1}"`;
+					newVersion = `"version": "${major}.${minor}.${Number(patch) + 1}"`;
+					break;
 			}
+			return newVersion;
 		},
 	);
-	writeFileSync(packagePath, updated, "utf8");
-}
-
-function main() {
-	const { positionals } = parseArgs({ allowPositionals: true });
-
-	const packageName = validatePackage(positionals[0]);
-	const versionType = validateVersionType(positionals[1]);
-
-	if (!packageName || !versionType) {
-		console.error("pnpm bump <package> <versionType>");
-		process.exit(1);
+	if (!newVersion) {
+		throw new Error("Version not found in package.json");
 	}
-
-	updateVersion(packageName, versionType);
+	writeFileSync(packagePath, updated, "utf8");
+	return newVersion;
 }
 
-main();
+function dirty() {
+	const out = execFileSync("git", ["status", "--short"]);
+	return out.toString().trim().length > 0;
+}
+
+/**
+ * @param {Package} name
+ * @param {string} version
+ */
+function commit(name, version) {
+	execFileSync("git", ["add", "."]);
+	execFileSync("git", ["commit", "-am", "chore: bump version"]);
+	execFileSync("git", ["tag", `${tagPrefix[name]}v${version}`]);
+	execFileSync("git", ["push"]);
+	execFileSync("git", ["push", "origin", "--tags"]);
+}
