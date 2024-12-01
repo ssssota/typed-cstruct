@@ -12,10 +12,12 @@ import {
 	readI16,
 	readI32,
 	readI64,
+	readI128,
 	readU8,
 	readU16,
 	readU32,
 	readU64,
+	readU128,
 	writeBool,
 	writeChar,
 	writeF32,
@@ -24,10 +26,12 @@ import {
 	writeI16,
 	writeI32,
 	writeI64,
+	writeI128,
 	writeU8,
 	writeU16,
 	writeU32,
 	writeU64,
+	writeU128,
 } from "../utils.js";
 
 export const u8: WritableValueBuilder<number> = {
@@ -69,6 +73,16 @@ export const i64: WritableValueBuilder<bigint> = {
 	size: 8,
 	read: readI64,
 	write: writeI64,
+};
+export const u128: WritableValueBuilder<bigint> = {
+	size: 16,
+	read: readU128,
+	write: writeU128,
+};
+export const i128: WritableValueBuilder<bigint> = {
+	size: 16,
+	read: readI128,
+	write: writeI128,
 };
 export const f32: WritableValueBuilder<number> = {
 	size: 4,

@@ -51,6 +51,49 @@ export function readI64(opts: ValueBuilderOptions): bigint {
 export function writeI64(value: bigint, opts: ValueBuilderOptions): void {
 	view(opts.buf).setBigInt64(opts.offset || 0, value, opts.endian === little);
 }
+export function readU128(opts: ValueBuilderOptions): bigint {
+	const v = view(opts.buf);
+	const offset = opts.offset || 0;
+	const littleEndian = opts.endian === little;
+	const lo = v.getBigUint64(offset, littleEndian);
+	const hi = v.getBigUint64(offset + 8, littleEndian);
+	return littleEndian ? lo | (hi << 64n) : hi | (lo << 64n);
+}
+export function writeU128(value: bigint, opts: ValueBuilderOptions): void {
+	const v = view(opts.buf);
+	const offset = opts.offset || 0;
+	const littleEndian = opts.endian === little;
+	const lo = value & 0xffff_ffff_ffff_ffffn;
+	const hi = value >> 64n;
+	v.setBigUint64(offset, littleEndian ? lo : hi, littleEndian);
+	v.setBigUint64(offset + 8, littleEndian ? hi : lo, littleEndian);
+}
+export function readI128(opts: ValueBuilderOptions): bigint {
+	const v = view(opts.buf);
+	const offset = opts.offset || 0;
+	const littleEndian = opts.endian === little;
+	const lo = v.getBigInt64(offset, littleEndian);
+	const hi = v.getBigInt64(offset + 8, littleEndian);
+
+	// Combine into a single 128-bit bigint
+	const result = littleEndian
+		? (hi << 64n) | lo
+		: (lo << 64n) | BigInt.asUintN(64, hi); // Unsigned low combined with signed high
+
+	// Adjust for negative values if the high bit (sign bit) of the high part is set
+	return result >= 2n ** 127n ? result - 2n ** 128n : result;
+}
+export function writeI128(value: bigint, opts: ValueBuilderOptions): void {
+	const v = view(opts.buf);
+	const offset = opts.offset || 0;
+	const littleEndian = opts.endian === little;
+	// Adjust for negative values by treating as unsigned if necessary
+	const unsignedValue = value < 0n ? value + 2n ** 128n : value;
+	const lo = unsignedValue & 0xffff_ffff_ffff_ffffn;
+	const hi = BigInt.asIntN(64, unsignedValue >> 64n);
+	v.setBigInt64(offset, littleEndian ? lo : hi, littleEndian);
+	v.setBigInt64(offset + 8, littleEndian ? hi : lo, littleEndian);
+}
 export function readF32(opts: ValueBuilderOptions): number {
 	return view(opts.buf).getFloat32(opts.offset || 0, opts.endian === little);
 }
