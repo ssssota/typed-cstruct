@@ -70,16 +70,16 @@ function updateVersion(name, versionType) {
 		(_, major, minor, patch) => {
 			switch (versionType) {
 				case "major":
-					newVersion = `"version": "${Number(major) + 1}.0.0"`;
+					newVersion = `${Number(major) + 1}.0.0`;
 					break;
 				case "minor":
-					newVersion = `"version": "${major}.${Number(minor) + 1}.0"`;
+					newVersion = `${major}.${Number(minor) + 1}.0`;
 					break;
 				case "patch":
-					newVersion = `"version": "${major}.${minor}.${Number(patch) + 1}"`;
+					newVersion = `${major}.${minor}.${Number(patch) + 1}`;
 					break;
 			}
-			return newVersion;
+			return `"version": "${newVersion}"`;
 		},
 	);
 	if (!newVersion) {
