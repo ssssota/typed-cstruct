@@ -358,7 +358,7 @@ it("enum", () => {
 	const opts = { buf };
 	const struct = new Struct().field(
 		"lang",
-		typ.enumLike(typ.u8, { 0: "English", 1: "Japanese" } as const),
+		typ.enumLike(typ.u8, { English: 0, Japanese: 1 } as const),
 	);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		lang: "English" | "Japanese";

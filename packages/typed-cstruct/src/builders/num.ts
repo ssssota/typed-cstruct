@@ -107,27 +107,29 @@ export const char: WritableValueBuilder<string> = {
 export function enumLike<
 	T extends number,
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
-	Variants extends Record<`${T}`, string> = Record<`${T}`, string>,
+	Variants extends Record<string, T> = Record<string, T>,
 >(
 	realType: WritableValueBuilder<T, Ctx> | ReadonlyValueBuilder<T, Ctx>,
 	variants: Variants,
-): WritableValueBuilder<Variants[keyof Variants], Ctx> {
+): WritableValueBuilder<keyof Variants, Ctx> {
 	return {
 		size: realType.size,
 		read(opts: ValueBuilderOptions, ctx: Ctx) {
-			const t = realType.read(opts, ctx);
-			const entry = Object.entries(variants).find(([k]) => k === t.toString());
-			if (entry) return entry[1] as Variants[keyof Variants];
-			throw new Error(`Unknown enum value: ${t}`);
+			const value = realType.read(opts, ctx);
+			const variant = Object.entries(variants).find(
+				([_, v]) => v === value,
+			)?.[0];
+			if (variant === undefined) {
+				throw new Error(`Unknown enum value: ${value}`);
+			}
+			return variant;
 		},
-		write(
-			value: Variants[keyof Variants],
-			opts: ValueBuilderOptions,
-			ctx: Ctx,
-		) {
-			const entry = Object.entries(variants).find(([_, v]) => v === value);
-			if (entry) return realType.write?.(Number(entry[0]) as T, opts, ctx);
-			throw new Error(`Unknown enum value: ${value}`);
+		write(value: keyof Variants, opts: ValueBuilderOptions, ctx: Ctx) {
+			const variant = variants[value];
+			if (variant === undefined) {
+				throw new Error(`Unknown enum variant: ${String(value)}`);
+			}
+			return realType.write?.(variant, opts, ctx);
 		},
 	};
 }
