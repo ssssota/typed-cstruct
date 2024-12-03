@@ -10,11 +10,6 @@ const packages = {
 	"typed-cstruct": "packages/typed-cstruct/package.json",
 	"@typed-cstruct/generator": "packages/generator/package.json",
 };
-/** @type {Record<Package, string>} */
-const tagPrefix = {
-	"typed-cstruct": "",
-	"@typed-cstruct/generator": "@typed-cstruct/generator",
-};
 
 main();
 function main() {
@@ -99,9 +94,10 @@ function dirty() {
  * @param {string} version
  */
 function commit(name, version) {
+	const tag = `${name === "typed-cstruct" ? "" : `${name}@`}v${version}`;
 	execFileSync("git", ["add", "."]);
 	execFileSync("git", ["commit", "-am", "chore: bump version"]);
-	execFileSync("git", ["tag", `${tagPrefix[name]}v${version}`]);
+	execFileSync("git", ["tag", tag]);
 	execFileSync("git", ["push"]);
 	execFileSync("git", ["push", "origin", "--tags"]);
 }
