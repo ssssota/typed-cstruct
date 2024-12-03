@@ -4,8 +4,15 @@ expression: ts
 ---
 import * as __typ from 'typed-cstruct';
 export function E() {
-  return __typ.enumLike({
+  return __typ.enumLike(__typ.u32, {
     A: 0,
     B: 1,
+  })
+}
+export function E2() {
+  return __typ.enumLike(__typ.i32, {
+    B: 0,
+    A: -1,
+    C: 1,
   })
 }

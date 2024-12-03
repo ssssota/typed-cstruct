@@ -133,17 +133,25 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         }
         result.push_str("}\n");
     }
-    for e in find_enums(&visitor) {
+    for (enum_name, enum_def) in find_enums(&visitor) {
+        let (ty, used2) = print_type(&enum_def.ty);
         result.push_str("export function ");
-        result.push_str(&e.0);
+        result.push_str(&enum_name);
         result.push_str("() {\n");
-        result.push_str("  return __typ.enumLike({\n");
-        for (k, v) in e.1 {
+        result.push_str("  return __typ.enumLike(");
+        result.push_str(&ty);
+        result.push_str(", {\n");
+        for (k, v) in enum_def.variants {
             result.push_str(format!("    {k}: {v},\n").as_str());
         }
         result.push_str("  })\n");
         result.push_str("}\n");
-        created.insert(e.0);
+        created.insert(enum_name);
+        for u in used2 {
+            if !WELL_KNOWN_TYPES.contains_key(&u) {
+                used.insert(u);
+            }
+        }
     }
     let not_created_types = visitor
         .types
@@ -257,32 +265,40 @@ fn print_type(ty: &syn::Type) -> (String, Vec<String>) {
         _ => unimplemented!("unsupported type"),
     }
 }
-fn find_enums(visitor: &DeclarationVisitor) -> HashMap<String, HashMap<String, String>> {
-    let mut enums: HashMap<String, HashMap<String, String>> = HashMap::new();
-    let ty_candidates = &visitor
-        .types
-        .clone()
-        .into_iter()
-        .map(|t| t.ident.to_string())
-        .collect::<Vec<String>>();
+
+struct Enum {
+    pub ty: Box<syn::Type>,
+    pub variants: HashMap<String, String>,
+}
+fn find_enums(visitor: &DeclarationVisitor) -> HashMap<String, Enum> {
+    let mut enums: HashMap<String, Enum> = HashMap::new();
+    let mut ty_candidates: HashMap<String, Box<syn::Type>> = HashMap::new();
+    for t in &visitor.types {
+        ty_candidates.insert(t.ident.to_string(), t.ty.clone());
+    }
     for c in &visitor.constants {
         if let syn::Type::Path(ref p) = *c.ty {
             if p.path.segments.len() != 1 {
                 continue;
             }
             let ty = p.path.segments[0].ident.to_string();
-            if !ty_candidates.contains(&ty) {
-                continue;
-            }
-            let ty_len = ty.len();
-            let variant_name = c.ident.to_string()[ty_len + 1..].to_string();
-            let variant_value = print_expr(&c.expr);
-            if let Some(e) = enums.get_mut(&ty) {
-                e.insert(variant_name, variant_value);
-            } else {
-                let mut e = HashMap::new();
-                e.insert(variant_name, variant_value);
-                enums.insert(ty, e);
+            if let Some(candidate) = ty_candidates.get(&ty) {
+                let ty_len = ty.len();
+                let variant_name = c.ident.to_string()[ty_len + 1..].to_string();
+                let variant_value = print_expr(&c.expr);
+                if let Some(e) = enums.get_mut(&ty) {
+                    e.variants.insert(variant_name, variant_value);
+                } else {
+                    let mut e = HashMap::new();
+                    e.insert(variant_name, variant_value);
+                    enums.insert(
+                        ty.clone(),
+                        Enum {
+                            ty: candidate.clone(),
+                            variants: e,
+                        },
+                    );
+                }
             }
         }
     }
@@ -320,6 +336,11 @@ mod tests {
             pub const E_A: E = 0;
             pub const E_B: E = 1;
             pub type E = u32;
+
+            pub const E2_A: E2 = -1;
+            pub const E2_B: E2 = 0;
+            pub const E2_C: E2 = 1;
+            pub type E2 = i32;
         "#;
         let ts = rust_to_ts(rust).unwrap();
         insta::assert_snapshot!(ts);
