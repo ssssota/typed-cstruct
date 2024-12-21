@@ -16,7 +16,8 @@
 		"build": "tsc -p tsconfig.lib.json",
 		"clean": "node -e 'fs.rmSync(`dist`,{recursive:true,force:true})'",
 		"coverage": "vitest run --coverage",
-		"prepare": "pnpm clean && pnpm build"
+		"prepare": "pnpm clean && pnpm build",
+		"doc": "typedoc src/index.ts"
 	},
 	"keywords": ["c", "struct", "proxy", "reader"],
 	"files": ["dist"],
@@ -28,6 +29,7 @@
 	},
 	"devDependencies": {
 		"@vitest/coverage-v8": "^2.1.5",
+		"typedoc": "^0.27.5",
 		"typescript": "^5.6.3",
 		"vitest": "^2.1.4"
 	}
