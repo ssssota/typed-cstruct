@@ -52,6 +52,9 @@ export function ptr<T>(
 export function ptr<T>(
 	builder: WritableValueBuilder<T>,
 ): WritableValueBuilder<T | null>;
+export function ptr<T>(
+	builder: ProxyValueBuilder<T>,
+): ProxyValueBuilder<T | null>;
 export function ptr<T>(builder: ValueBuilder<T>): ValueBuilder<T | null> {
 	const read = (opts: ValueBuilderOptions) => {
 		const p = readU32(opts);
@@ -66,6 +69,13 @@ export function ptr<T>(builder: ValueBuilder<T>): ValueBuilder<T | null> {
 				builder.write?.(value, { ...opts, offset: p }, {});
 			}
 		: undefined;
+	const proxy = builder.proxy
+		? (opts: ValueBuilderOptions) => {
+				const p = readU32(opts);
+				if (p === 0) return null;
+				return builder.proxy?.({ ...opts, offset: p }, {}) ?? null;
+			}
+		: undefined;
 
-	return { size: 4, read, write };
+	return { size: 4, read, write, proxy };
 }
