@@ -131,7 +131,7 @@ pub fn rust_to_ts(rust: &str, ignore_entities: Vec<&str>) -> Result<String> {
         result.push_str("export function ");
         result.push_str(&name);
         result.push_str("() {\n");
-        result.push_str("  return new __typ.default()\n");
+        result.push_str("  return new __typ.Struct()\n");
         if let syn::Fields::Named(named_fields) = &s.fields {
             for f in &named_fields.named {
                 let (ty, used2) = print_type(&f.ty);
