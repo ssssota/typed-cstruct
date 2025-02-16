@@ -84,7 +84,7 @@ pub fn generate(
     clang_args: Option<Vec<&str>>,
 ) -> Result<String> {
     let bindings = bindgen::builder()
-        .clang_args(clang_args.unwrap_or(vec![]))
+        .clang_args(clang_args.unwrap_or_default())
         .disable_header_comment()
         .layout_tests(false)
         .derive_copy(false)
@@ -120,7 +120,7 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
     let mut used = HashSet::new();
     for s in &visitor.structs {
         let name = s.ident.to_string();
-        if IGNORE_TYPES.contains(&name.as_str()) {
+        if IGNORE_TYPES.contains(name.as_str()) {
             continue;
         }
         result.push_str("export function ");
@@ -149,7 +149,7 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
     for (enum_name, enum_def) in sort_hashmap!(enums, String, Enum) {
         let (ty, used2) = print_type(&enum_def.ty);
         result.push_str("export function ");
-        result.push_str(&enum_name);
+        result.push_str(enum_name);
         result.push_str("() {\n");
         result.push_str("  return __typ.enumLike(");
         result.push_str(&ty);
@@ -195,9 +195,9 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
     }
     let used_but_not_created = used.difference(&created);
     let used_but_not_created = used_but_not_created
-        .filter(|u| !IGNORE_TYPES.contains(&u.as_str()))
+        .filter(|u| !IGNORE_TYPES.contains(u.as_str()))
         .collect::<Vec<&String>>();
-    if used_but_not_created.len() > 0 {
+    if !used_but_not_created.is_empty() {
         return Err(err(format!(
             "used but not created: {:?}",
             used_but_not_created,
@@ -212,7 +212,7 @@ struct DeclarationVisitor<'ast> {
     types: Vec<&'ast syn::ItemType>,
     constants: Vec<&'ast syn::ItemConst>,
 }
-impl<'ast> DeclarationVisitor<'ast> {
+impl DeclarationVisitor<'_> {
     fn new() -> Self {
         DeclarationVisitor {
             structs: vec![],
