@@ -1,7 +1,7 @@
-import { StructBase } from "./builders/struct.js";
-export class Struct extends StructBase<[]> {
+import { type Field, StructBase } from "./builders/struct.js";
+export class Struct<Fields extends Field[] = []> extends StructBase<Fields> {
 	constructor() {
-		super([]);
+		super([] as unknown as Fields);
 	}
 }
 export * from "./types.js";

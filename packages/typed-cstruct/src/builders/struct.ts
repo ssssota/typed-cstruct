@@ -8,7 +8,7 @@ import type {
 	WritableValueBuilder,
 } from "../types.js";
 
-type Field<T extends ValueBuilder = ValueBuilder> = {
+export type Field<T extends ValueBuilder = ValueBuilder> = {
 	name: string;
 	builder: T;
 	offset: number;
