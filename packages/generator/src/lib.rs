@@ -7,6 +7,7 @@ use syn::visit::Visit;
 extern crate napi_derive;
 
 static IGNORE_TYPES: phf::Set<&'static str> = phf_set! {
+    "__BindgenOpaqueArray",
     "__BindgenBitfieldUnit",
     "__BindgenUnionField",
 };
@@ -81,6 +82,7 @@ pub fn generate(
     headers: Vec<&str>,
     dump_rust_code: Option<bool>,
     clang_args: Option<Vec<&str>>,
+    ignore_entities: Option<Vec<&str>>,
 ) -> Result<String> {
     let bindings = bindgen::builder()
         .clang_args(clang_args.unwrap_or_default())
@@ -107,10 +109,10 @@ pub fn generate(
     }
 
     // Ok(rust)
-    rust_to_ts(&rust)
+    rust_to_ts(&rust, ignore_entities.unwrap_or_default())
 }
 
-pub fn rust_to_ts(rust: &str) -> Result<String> {
+pub fn rust_to_ts(rust: &str, ignore_entities: Vec<&str>) -> Result<String> {
     let ast: syn::File = syn::parse_str(rust).map_err(err)?;
     let mut visitor = DeclarationVisitor::new();
     visitor.visit_file(&ast);
@@ -121,6 +123,9 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
     for s in &visitor.structs {
         let name = s.ident.to_string();
         if IGNORE_TYPES.contains(name.as_str()) {
+            continue;
+        }
+        if ignore_entities.contains(&name.as_str()) {
             continue;
         }
         result.push_str("export function ");
@@ -147,6 +152,9 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
     }
     let enums = find_enums(&visitor);
     for (enum_name, enum_def) in sort_hashmap!(enums, String, Enum) {
+        if ignore_entities.contains(&enum_name.as_str()) {
+            continue;
+        }
         let (ty, used2) = print_type(&enum_def.ty);
         result.push_str("export function ");
         result.push_str(enum_name);
@@ -178,6 +186,9 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         .collect::<Vec<&&syn::ItemType>>();
     for a in not_created_types {
         let name = a.ident.to_string();
+        if ignore_entities.contains(&name.as_str()) {
+            continue;
+        }
         let (ty, used2) = print_type(&a.ty);
         result.push_str("export function ");
         result.push_str(&name);
@@ -338,7 +349,7 @@ mod tests {
             struct B { c: C }
             type C = i32;
         "#;
-        let ts = rust_to_ts(rust).unwrap();
+        let ts = rust_to_ts(rust, vec![]).unwrap();
         insta::assert_snapshot!(ts);
     }
 
@@ -347,7 +358,7 @@ mod tests {
         let rust = r#"
             struct A { a: [i32; 3] }
         "#;
-        let ts = rust_to_ts(rust).unwrap();
+        let ts = rust_to_ts(rust, vec![]).unwrap();
         insta::assert_snapshot!(ts);
     }
 
@@ -364,7 +375,7 @@ mod tests {
             pub const E2_C: E2 = 1;
             pub type E2 = i32;
         "#;
-        let ts = rust_to_ts(rust).unwrap();
+        let ts = rust_to_ts(rust, vec![]).unwrap();
         insta::assert_snapshot!(ts);
     }
 
@@ -373,7 +384,7 @@ mod tests {
         let rust = r#"
             struct A { a: *const i32 }
         "#;
-        let ts = rust_to_ts(rust).unwrap();
+        let ts = rust_to_ts(rust, vec![]).unwrap();
         insta::assert_snapshot!(ts);
     }
 
@@ -382,7 +393,7 @@ mod tests {
         let rust = r#"
             struct A { a: [*const i32; 3] }
         "#;
-        let ts = rust_to_ts(rust).unwrap();
+        let ts = rust_to_ts(rust, vec![]).unwrap();
         insta::assert_snapshot!(ts);
     }
 
@@ -391,7 +402,7 @@ mod tests {
         let rust = r#"
             struct A { a: *mut [i32; 3] }
         "#;
-        let ts = rust_to_ts(rust).unwrap();
+        let ts = rust_to_ts(rust, vec![]).unwrap();
         insta::assert_snapshot!(ts);
     }
 
@@ -400,7 +411,7 @@ mod tests {
         let rust = r#"
             struct A { a: [[i32; 3]; 3] }
         "#;
-        let ts = rust_to_ts(rust).unwrap();
+        let ts = rust_to_ts(rust, vec![]).unwrap();
         insta::assert_snapshot!(ts);
     }
 
@@ -408,13 +419,20 @@ mod tests {
     fn not_enum() {
         let rust = r#"
             pub const FP_NAN: _bindgen_ty_1 = 0;
-            pub const FP_INFINITE: _bindgen_ty_1 = 1;
-            pub const FP_ZERO: _bindgen_ty_1 = 2;
-            pub const FP_SUBNORMAL: _bindgen_ty_1 = 3;
-            pub const FP_NORMAL: _bindgen_ty_1 = 4;
             pub type _bindgen_ty_1 = ::core::ffi::c_uint;
         "#;
-        let ts = rust_to_ts(rust).unwrap();
+        let ts = rust_to_ts(rust, vec![]).unwrap();
+        insta::assert_snapshot!(ts);
+    }
+
+    #[test]
+    fn ignore() {
+        let rust = r#"
+            struct A { a: i32, b: B }
+            struct B { c: C }
+            type C = i32;
+        "#;
+        let ts = rust_to_ts(rust, vec!["A"]).unwrap();
         insta::assert_snapshot!(ts);
     }
 }
