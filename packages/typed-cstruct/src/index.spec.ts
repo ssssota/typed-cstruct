@@ -1,5 +1,5 @@
 import { expect, expectTypeOf, it } from "vitest";
-import Struct, * as typ from "./index.js";
+import * as typ from "./index.js";
 
 it("single field", () => {
 	/**
@@ -11,7 +11,7 @@ it("single field", () => {
 	 */
 	const buf = new Uint8Array([0x01]);
 	const opts = { buf };
-	const struct = new Struct().field("a", typ.u8);
+	const struct = new typ.Struct().field("a", typ.u8);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{ a: number }>();
 	expect(struct.proxy(opts)).toEqual({ a: 1 });
 	expectTypeOf(struct.read(opts)).toEqualTypeOf<{ readonly a: number }>();
@@ -34,7 +34,7 @@ it("multiple fields", () => {
 	 */
 	const buf = new Uint8Array([0x01, 0x02]);
 	const opts = { buf };
-	const struct = new Struct().field("a", typ.u8).field("b", typ.u8);
+	const struct = new typ.Struct().field("a", typ.u8).field("b", typ.u8);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		a: number;
 		b: number;
@@ -64,7 +64,7 @@ it("offset", () => {
 	 */
 	const buf = new Uint8Array([0x00, 0x00, 0x00, 0x01, 0x02]);
 	const opts = { buf, offset: 3 };
-	const struct = new Struct().field("a", typ.u8).field("b", typ.u8);
+	const struct = new typ.Struct().field("a", typ.u8).field("b", typ.u8);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		a: number;
 		b: number;
@@ -92,7 +92,7 @@ it("little endian", () => {
 	 */
 	const buf = new Uint8Array([0x01, 0x00]);
 	const opts = { buf, endian: "little" } as const;
-	const struct = new Struct().field("a", typ.u16);
+	const struct = new typ.Struct().field("a", typ.u16);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		a: number;
 	}>();
@@ -117,7 +117,7 @@ it("big endian", () => {
 	 */
 	const buf = new Uint8Array([0x01, 0x00]);
 	const opts = { buf, endian: "big" } as const;
-	const struct = new Struct().field("a", typ.u16);
+	const struct = new typ.Struct().field("a", typ.u16);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		a: number;
 	}>();
@@ -149,7 +149,7 @@ it("char*", () => {
     0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x00, // "Hello"
 	]);
 	const opts = { buf };
-	const struct = new Struct()
+	const struct = new typ.Struct()
 		.field("str", typ.charPointerAsString())
 		.field("len", typ.u32);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
@@ -178,7 +178,7 @@ it("sized array", () => {
 		0x03, // length
 	]);
 	const opts = { buf };
-	const struct = new Struct()
+	const struct = new typ.Struct()
 		.field("arr", typ.sizedArray(typ.u8, 3))
 		.field("length", typ.u8);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
@@ -215,7 +215,7 @@ it("sized string", () => {
 		0x00, 0x00, 0x00, 0x00, // padding
 	]);
 	const opts = { buf };
-	const struct = new Struct().field("str", typ.sizedCharArrayAsString(8));
+	const struct = new typ.Struct().field("str", typ.sizedCharArrayAsString(8));
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{ str: string }>();
 	expect(struct.proxy(opts)).toEqual({ str: "foo" });
 	expectTypeOf(struct.read(opts)).toEqualTypeOf<{ readonly str: string }>();
@@ -245,7 +245,7 @@ it("sized string (disable null termination)", () => {
 		0x00, 0x00, 0x00, 0x00, // padding
 	]);
 	const opts = { buf };
-	const struct = new Struct().field(
+	const struct = new typ.Struct().field(
 		"str",
 		typ.sizedCharArrayAsString(8, { nullTermination: false }),
 	);
@@ -273,9 +273,9 @@ it("nested struct", () => {
 	 */
 	const buf = new Uint8Array([0x01, 0x01, 0xff]);
 	const opts = { buf };
-	const struct = new Struct()
+	const struct = new typ.Struct()
 		.field("a", typ.u8)
-		.field("inner", new Struct().field("b", typ.u8))
+		.field("inner", new typ.Struct().field("b", typ.u8))
 		.field("c", typ.u8);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		a: number;
@@ -309,7 +309,7 @@ it("length from field", () => {
 		0x00, 0x00, 0x00, 0x00, // str*
 	]);
 	const opts = { buf, offset: 5 };
-	const struct = new Struct()
+	const struct = new typ.Struct()
 		.field("length", typ.u8)
 		.field("str", typ.pointerArrayFromLengthField(typ.char, "length"));
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
@@ -356,7 +356,7 @@ it("enum", () => {
 	 */
 	const buf = new Uint8Array([0x01]);
 	const opts = { buf };
-	const struct = new Struct().field(
+	const struct = new typ.Struct().field(
 		"lang",
 		typ.enumLike(typ.u8, { English: 0, Japanese: 1 } as const),
 	);
@@ -382,7 +382,7 @@ it("convert", () => {
 	 */
 	const buf = new Uint8Array([0x01, 0x02, 0x03]);
 	const opts = { buf };
-	const struct = new Struct().field(
+	const struct = new typ.Struct().field(
 		"pos",
 		typ.convert(typ.sizedArray(typ.u8, 3), (arr) => ({
 			x: arr[0],
@@ -410,7 +410,7 @@ it("skip", () => {
 	 */
 	const buf = new Uint8Array([0x01, 0xff, 0x02]);
 	const opts = { buf };
-	const struct = new Struct()
+	const struct = new typ.Struct()
 		.field("a", typ.u8)
 		.field("unused", typ.skip(typ.u8.size))
 		.field("b", typ.u8);
@@ -438,7 +438,9 @@ it("ptr", () => {
 	 */
 	const buf = new Uint8Array([0x05, 0x00, 0x00, 0x00, 0x01, 0x02]);
 	const opts = { buf };
-	const struct = new Struct().field("a", typ.ptr(typ.u8)).field("b", typ.u8);
+	const struct = new typ.Struct()
+		.field("a", typ.ptr(typ.u8))
+		.field("b", typ.u8);
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		a: number | null;
 		b: number;
@@ -525,7 +527,7 @@ it("custom builder", () => {
 		write: xyzWritable.write,
 	});
 	const opts = { buf };
-	const struct = new Struct()
+	const struct = new typ.Struct()
 		.field("pos", xyzReadonly)
 		.field("rot", xyzWritable)
 		.field("scale", xyzProxy);
@@ -577,7 +579,7 @@ it("readme sample", () => {
 	]);
 
 	// 1. Define a struct
-	const struct = new Struct()
+	const struct = new typ.Struct()
 		.field("a", typ.u8) // unsigned 8-bit(1-byte) integer
 		.field("b", typ.i16) // 16-bit(2-byte) integer
 		.field("c", typ.f32); // 32-bit(4-byte) float
