@@ -30,3 +30,10 @@ jobs:
           files: ./packages/typed-cstruct/coverage/coverage-final.json
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-rust
+      - run: cargo test --all
