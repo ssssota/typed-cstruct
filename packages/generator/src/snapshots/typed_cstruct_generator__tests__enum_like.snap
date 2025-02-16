@@ -11,8 +11,8 @@ export function E() {
 }
 export function E2() {
   return __typ.enumLike(__typ.i32, {
-    B: 0,
     A: -1,
+    B: 0,
     C: 1,
   })
 }

@@ -146,7 +146,12 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         result.push_str("  return __typ.enumLike(");
         result.push_str(&ty);
         result.push_str(", {\n");
-        for (k, v) in enum_def.variants {
+        let mut sorted = enum_def
+            .variants
+            .iter()
+            .collect::<Vec<(&String, &String)>>();
+        sorted.sort_by(|a, b| a.1.cmp(b.1));
+        for (k, v) in sorted {
             result.push_str(format!("    {k}: {v},\n").as_str());
         }
         result.push_str("  })\n");
