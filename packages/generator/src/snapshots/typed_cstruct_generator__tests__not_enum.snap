@@ -1,0 +1,8 @@
+---
+source: packages/generator/src/lib.rs
+expression: ts
+---
+import * as __typ from 'typed-cstruct';
+export function _bindgen_ty_1() {
+  return __typ.u32;
+}

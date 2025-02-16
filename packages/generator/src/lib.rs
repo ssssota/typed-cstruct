@@ -1,7 +1,6 @@
-use std::collections::{HashMap, HashSet};
-
 use napi::bindgen_prelude::*;
 use phf::{phf_map, phf_set};
+use std::collections::{HashMap, HashSet};
 use syn::visit::Visit;
 
 #[macro_use]
@@ -301,9 +300,13 @@ fn find_enums(visitor: &DeclarationVisitor) -> HashMap<String, Enum> {
                 continue;
             }
             let ty = p.path.segments[0].ident.to_string();
+            let ty_len = ty.len();
+            let const_name = c.ident.to_string();
+            if !const_name.starts_with(&ty) {
+                continue;
+            }
             if let Some(candidate) = ty_candidates.get(&ty) {
-                let ty_len = ty.len();
-                let variant_name = c.ident.to_string()[ty_len + 1..].to_string();
+                let variant_name = const_name[ty_len + 1..].to_string();
                 let variant_value = print_expr(&c.expr);
                 if let Some(e) = enums.get_mut(&ty) {
                     e.variants.insert(variant_name, variant_value);
@@ -396,6 +399,20 @@ mod tests {
     fn nested_array() {
         let rust = r#"
             struct A { a: [[i32; 3]; 3] }
+        "#;
+        let ts = rust_to_ts(rust).unwrap();
+        insta::assert_snapshot!(ts);
+    }
+
+    #[test]
+    fn not_enum() {
+        let rust = r#"
+            pub const FP_NAN: _bindgen_ty_1 = 0;
+            pub const FP_INFINITE: _bindgen_ty_1 = 1;
+            pub const FP_ZERO: _bindgen_ty_1 = 2;
+            pub const FP_SUBNORMAL: _bindgen_ty_1 = 3;
+            pub const FP_NORMAL: _bindgen_ty_1 = 4;
+            pub type _bindgen_ty_1 = ::core::ffi::c_uint;
         "#;
         let ts = rust_to_ts(rust).unwrap();
         insta::assert_snapshot!(ts);
