@@ -26,6 +26,10 @@ function main() {
 		console.error("Working directory is dirty");
 		process.exit(1);
 	}
+	if (currentBranch() !== "main") {
+		console.error("Not on main branch");
+		process.exit(1);
+	}
 
 	const version = updateVersion(packageName, versionType);
 	commit(packageName, version);
@@ -82,6 +86,11 @@ function updateVersion(name, versionType) {
 	}
 	writeFileSync(packagePath, updated, "utf8");
 	return newVersion;
+}
+
+function currentBranch() {
+	const branch = execFileSync("git", ["branch", "--show-current"]);
+	return branch.toString().trim();
 }
 
 function dirty() {
