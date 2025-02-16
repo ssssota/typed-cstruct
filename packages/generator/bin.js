@@ -21,6 +21,10 @@ const { values, positionals } = parseArgs({
 			type: "string",
 			multiple: true,
 		},
+		"ignore-entities": {
+			type: "string",
+			multiple: true,
+		},
 	},
 	allowPositionals: true,
 });
@@ -44,7 +48,12 @@ if (values.header.length === 0) {
 
 fs.writeFileSync(
 	positionals[0],
-	generate(values.header, values["dump-rust-code"], values["clang-args"]),
+	generate(
+		values.header,
+		values["dump-rust-code"],
+		values["clang-args"],
+		values["ignore-entities"],
+	),
 );
 
 function help() {

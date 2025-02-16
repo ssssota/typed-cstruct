@@ -1,0 +1,12 @@
+---
+source: packages/generator/src/lib.rs
+expression: ts
+---
+import * as __typ from 'typed-cstruct';
+export function B() {
+  return new __typ.default()
+    .field('c', C())
+}
+export function C() {
+  return __typ.i32;
+}
