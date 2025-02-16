@@ -301,9 +301,13 @@ fn find_enums(visitor: &DeclarationVisitor) -> HashMap<String, Enum> {
                 continue;
             }
             let ty = p.path.segments[0].ident.to_string();
+            let ty_len = ty.len();
+            let const_name = c.ident.to_string();
+            if !const_name.starts_with(&ty) {
+                continue;
+            }
             if let Some(candidate) = ty_candidates.get(&ty) {
-                let ty_len = ty.len();
-                let variant_name = c.ident.to_string()[ty_len + 1..].to_string();
+                let variant_name = const_name[ty_len + 1..].to_string();
                 let variant_value = print_expr(&c.expr);
                 if let Some(e) = enums.get_mut(&ty) {
                     e.variants.insert(variant_name, variant_value);
