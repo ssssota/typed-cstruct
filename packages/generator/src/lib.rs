@@ -1,7 +1,6 @@
-use std::collections::{HashMap, HashSet};
-
 use napi::bindgen_prelude::*;
 use phf::{phf_map, phf_set};
+use std::collections::{HashMap, HashSet};
 use syn::visit::Visit;
 
 #[macro_use]
@@ -400,6 +399,20 @@ mod tests {
     fn nested_array() {
         let rust = r#"
             struct A { a: [[i32; 3]; 3] }
+        "#;
+        let ts = rust_to_ts(rust).unwrap();
+        insta::assert_snapshot!(ts);
+    }
+
+    #[test]
+    fn not_enum() {
+        let rust = r#"
+            pub const FP_NAN: _bindgen_ty_1 = 0;
+            pub const FP_INFINITE: _bindgen_ty_1 = 1;
+            pub const FP_ZERO: _bindgen_ty_1 = 2;
+            pub const FP_SUBNORMAL: _bindgen_ty_1 = 3;
+            pub const FP_NORMAL: _bindgen_ty_1 = 4;
+            pub type _bindgen_ty_1 = ::core::ffi::c_uint;
         "#;
         let ts = rust_to_ts(rust).unwrap();
         insta::assert_snapshot!(ts);
