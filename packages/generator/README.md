@@ -13,14 +13,18 @@ npm install -D @typed-cstruct/generator
 ### CLI
 
 ```sh
-tcgen -h header.h -h another.h generated.ts
+tcgen -h header.h -h another.h --clang-args="--sysroot=/usr/include" generated.ts
 ```
 
 ### API
 
 ```ts
 import { generate } from '@typed-cstruct/generator';
-const source = generate('header.h', 'another.h');
+const source = generate(
+  ['header.h', 'another.h'], // header files
+  false, // Dump Rust code to stdout, if true
+  ['--sysroot=/usr/include'] // clang args
+);
 ```
 
 ## License
