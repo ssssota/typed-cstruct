@@ -85,6 +85,7 @@ pub fn generate(
 ) -> Result<String> {
     let bindings = bindgen::builder()
         .clang_args(clang_args.unwrap_or_default())
+        .formatter(bindgen::Formatter::None)
         .disable_header_comment()
         .layout_tests(false)
         .derive_copy(false)
