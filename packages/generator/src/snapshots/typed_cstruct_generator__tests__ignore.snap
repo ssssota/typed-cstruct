@@ -4,7 +4,7 @@ expression: ts
 ---
 import * as __typ from 'typed-cstruct';
 export function B() {
-  return new __typ.default()
+  return new __typ.Struct()
     .field('c', C())
 }
 export function C() {

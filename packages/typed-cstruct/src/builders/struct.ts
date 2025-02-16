@@ -8,7 +8,7 @@ import type {
 	WritableValueBuilder,
 } from "../types.js";
 
-type Field<T extends ValueBuilder = ValueBuilder> = {
+export type Field<T extends ValueBuilder = ValueBuilder> = {
 	name: string;
 	builder: T;
 	offset: number;
@@ -40,9 +40,7 @@ type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 	}>
 >;
 
-export class StructBase<Fields extends Field[] = []>
-	implements ProxyValueBuilder
-{
+class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 	#size: number;
 	protected constructor(private fields: Fields) {
 		this.#size = this.fields.reduce((acc, f) => acc + f.builder.size, 0);
@@ -55,11 +53,8 @@ export class StructBase<Fields extends Field[] = []>
 	field<Name extends string, Builder extends ValueBuilder<any, any>>(
 		name: Name,
 		builder: Builder,
-	): StructBase<[...Fields, { name: Name; builder: Builder; offset: number }]> {
-		return new StructBase([
-			...this.fields,
-			{ name, builder, offset: this.#size },
-		]);
+	): Struct<[...Fields, { name: Name; builder: Builder; offset: number }]> {
+		return new Struct([...this.fields, { name, builder, offset: this.#size }]);
 	}
 
 	#proxy(
@@ -128,3 +123,4 @@ export class StructBase<Fields extends Field[] = []>
 		}
 	}
 }
+export { Struct as StructBase };
