@@ -433,28 +433,41 @@ it("ptr", () => {
 	 * struct {
 	 *   uint8_t *a;
 	 *   uint8_t b;
-	 * } buf = { 0x05, 0x00, 0x00, 0x00, 0x01 };
+	 *   struct {
+	 *     uint8_t c;
+	 *   } *d;
+	 * } buf = { 0x09, 0x00, 0x00, 0x00, 0x01, 0x09, 0x00, 0x00, 0x00 };
 	 * ```
 	 */
-	const buf = new Uint8Array([0x05, 0x00, 0x00, 0x00, 0x01, 0x02]);
+	const buf = new Uint8Array([
+		0x09, 0x00, 0x00, 0x00, 0x01, 0x09, 0x00, 0x00, 0x00, 0x02,
+	]);
 	const opts = { buf };
 	const struct = new typ.Struct()
 		.field("a", typ.ptr(typ.u8))
-		.field("b", typ.u8);
+		.field("b", typ.u8)
+		.field("d", typ.ptr(new typ.Struct().field("c", typ.u8)));
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{
 		a: number | null;
 		b: number;
+		d: { c: number } | null;
 	}>();
-	expect(struct.proxy(opts)).toEqual({ a: 2, b: 1 });
+	expect(struct.proxy(opts)).toEqual({ a: 2, b: 1, d: { c: 2 } });
 	expectTypeOf(struct.read(opts)).toEqualTypeOf<{
 		readonly a: number | null;
 		readonly b: number;
+		readonly d: { c: number } | null;
 	}>();
-	expect(struct.read(opts)).toStrictEqual({ a: 2, b: 1 });
+	expect(struct.read(opts)).toStrictEqual({ a: 2, b: 1, d: { c: 2 } });
 	struct.proxy(opts).a = 3;
-	expect(struct.read(opts)).toStrictEqual({ a: 3, b: 1 });
+	expect(struct.read(opts)).toStrictEqual({ a: 3, b: 1, d: { c: 3 } });
+	const d = struct.proxy(opts).d;
+	if (d) d.c = 4;
+	expect(struct.read(opts)).toStrictEqual({ a: 4, b: 1, d: { c: 4 } });
 	expect(buf).toStrictEqual(
-		new Uint8Array([0x05, 0x00, 0x00, 0x00, 0x01, 0x03]),
+		new Uint8Array([
+			0x09, 0x00, 0x00, 0x00, 0x01, 0x09, 0x00, 0x00, 0x00, 0x04,
+		]),
 	);
 	expect(() => {
 		struct.proxy(opts).a = null;
