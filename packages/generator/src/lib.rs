@@ -63,6 +63,13 @@ static WELL_KNOWN_TYPES: phf::Map<&'static str, &'static str> = phf_map! {
     "isize" => "__typ.i32",
     "usize" => "__typ.u32",
 };
+macro_rules! sort_hashmap {
+    ($h:expr, $k:ty, $v:ty) => {{
+        let mut sorted = $h.iter().collect::<Vec<(&$k, &$v)>>();
+        sorted.sort_by(|a, b| a.0.cmp(b.0));
+        sorted
+    }};
+}
 fn well_known_or(ty: &str) -> String {
     WELL_KNOWN_TYPES
         .get(ty)
@@ -138,7 +145,8 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
         }
         result.push_str("}\n");
     }
-    for (enum_name, enum_def) in find_enums(&visitor) {
+    let enums = find_enums(&visitor);
+    for (enum_name, enum_def) in sort_hashmap!(enums, String, Enum) {
         let (ty, used2) = print_type(&enum_def.ty);
         result.push_str("export function ");
         result.push_str(&enum_name);
@@ -151,12 +159,12 @@ pub fn rust_to_ts(rust: &str) -> Result<String> {
             .iter()
             .collect::<Vec<(&String, &String)>>();
         sorted.sort_by(|a, b| a.1.cmp(b.1));
-        for (k, v) in sorted {
+        for (k, v) in sort_hashmap!(enum_def.variants, String, String) {
             result.push_str(format!("    {k}: {v},\n").as_str());
         }
         result.push_str("  })\n");
         result.push_str("}\n");
-        created.insert(enum_name);
+        created.insert(enum_name.to_string());
         for u in used2 {
             if !WELL_KNOWN_TYPES.contains_key(&u) {
                 used.insert(u);
