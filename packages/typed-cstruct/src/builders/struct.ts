@@ -13,15 +13,15 @@ export type Field<T extends ValueBuilder = ValueBuilder> = {
 	builder: T;
 	offset: number;
 };
-type TupleToUnion<T> = T extends (infer U)[] ? U : never;
-type UnionToIntersection<U> = (
+export type TupleToUnion<T> = T extends (infer U)[] ? U : never;
+export type UnionToIntersection<U> = (
 	U extends any
 		? (arg: U) => void
 		: never
 ) extends (arg: infer I) => void
 	? I
 	: never;
-type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
+export type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 	TupleToUnion<{
 		[K in keyof Fields]: Fields[K] extends {
 			name: infer Name;
