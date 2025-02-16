@@ -1,6 +1,6 @@
 {
 	"name": "typed-cstruct",
-	"version": "0.9.2",
+	"version": "0.9.3",
 	"description": "Read a binary C struct, Use it as a JavaScript object",
 	"type": "module",
 	"module": "dist/index.js",
