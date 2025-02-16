@@ -13,7 +13,11 @@ npm install typed-cstruct
 ### Basic
 
 ```javascript
-import Struct, * as typ from "typed-cstruct";
+import {
+  Struct,
+  u8, i16, f32,
+  sizedArray, sizedCharArrayAsString, enumLike, convert, defineBuilder
+} from "typed-cstruct";
 
 // 0. Check the struct definition
 // struct {
@@ -29,9 +33,9 @@ const buf = new Uint8Array([
 
 // 1. Define a struct
 const struct = new Struct()
-  .field("a", typ.u8) // unsigned 8-bit(1-byte) integer
-  .field("b", typ.i16) // 16-bit(2-byte) integer
-  .field("c", typ.f32); // 32-bit(4-byte) float
+  .field("a", u8) // unsigned 8-bit(1-byte) integer
+  .field("b", i16) // 16-bit(2-byte) integer
+  .field("c", f32); // 32-bit(4-byte) float
 
 // 2a. Read a struct from a buffer
 const obj = struct.read({ buf });
@@ -78,8 +82,8 @@ You can define an array field.
 //   int16_t b[3];
 // } buf = { 1, { 0x0102, 0x0304, 0x0506 } };
 const struct = new Struct()
-  .field("a", typ.u8)
-  .field("b", typ.sizedArray(typ.i16, 3)); // 3 x 16-bit(2-byte) integers
+  .field("a", u8)
+  .field("b", sizedArray(i16, 3)); // 3 x 16-bit(2-byte) integers
 ```
 
 #### Nested
@@ -95,10 +99,10 @@ You can define a nested struct.
 //   } d;
 // } buf = { 1, { 0x0203, 1.0f } };
 const struct = new Struct()
-  .field("a", typ.u8)
+  .field("a", u8)
   .field("d", new Struct()
-    .field("b", typ.i16)
-    .field("c", typ.f32));
+    .field("b", i16)
+    .field("c", f32));
 ```
 
 #### String
@@ -111,8 +115,8 @@ You can define a string field.
 //   char b[4];
 // } buf = { 1, "foo" };
 const struct = new Struct()
-  .field("a", typ.u8)
-  .field("b", typ.sizedCharArrayAsString(4)); // 4-byte string
+  .field("a", u8)
+  .field("b", sizedCharArrayAsString(4)); // 4-byte string
 ```
 
 Default encoding is `utf8`.
@@ -122,8 +126,8 @@ You can specify the encoding and decoding functions.
 const encode = (str) => new Uint8Array(str.split("").map((c) => c.charCodeAt(0)));
 const decode = (buf) => buf.map((c) => String.fromCharCode(c)).join("");
 const struct = new Struct()
-  .field("a", typ.u8)
-  .field("b", typ.sizedCharArrayAsString(4, { encode, decode })); // 4-byte string
+  .field("a", u8)
+  .field("b", sizedCharArrayAsString(4, { encode, decode })); // 4-byte string
 ```
 
 #### Enum
@@ -140,8 +144,8 @@ You can define an enum field.
 //   } b;
 // } buf = { 1, 2 };
 const struct = new Struct()
-  .field("a", typ.u8)
-  .field("b", typ.enumLike(typ.u8, { 1: 'FOO', 2: 'BAR', 3: 'BAZ' } as const));
+  .field("a", u8)
+  .field("b", enumLike(u8, { 1: 'FOO', 2: 'BAR', 3: 'BAZ' } as const));
 const buf = new Uint8Array([0x01, 0x02]);
 const obj = struct.read({ buf });
 console.log(obj); // => { a: 1, b: 'BAR' }
@@ -156,15 +160,15 @@ You can define a custom field.
 //   uint8_t a;
 //   uint8_t pos[2];
 // }
-const position = typ.defineBuilder({ // define custom builder
+const position = defineBuilder({ // define custom builder
   size: 2,
   read(opts) {
     const offset = opts.offset || 0;
-    return { x: typ.u8.read({ ...opts, offset }), y: typ.u8.read({ ...opts, offset: offset + 1 }) };
+    return { x: u8.read({ ...opts, offset }), y: u8.read({ ...opts, offset: offset + 1 }) };
   },
 });
 const struct = new Struct()
-  .field("a", typ.u8)
+  .field("a", u8)
   .field("pos", position);
 const buf = new Uint8Array([0x01, 0x02, 0x03]);
 const obj = struct.read({ buf });
@@ -175,8 +179,8 @@ You can use `convert` function to convert a value (readonly).
 
 ```javascript
 const struct = new Struct()
-  .field("a", typ.u8)
-  .field("pos", typ.convert(typ.sizedArray(typ.u8, 2), ([x, y]) => ({ x, y })));
+  .field("a", u8)
+  .field("pos", convert(sizedArray(u8, 2), ([x, y]) => ({ x, y })));
 const buf = new Uint8Array([0x01, 0x02, 0x03]);
 const obj = struct.read({ buf });
 console.log(obj); // => { a: 1, pos: { x: 2, y: 3 } }

@@ -40,7 +40,9 @@ type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 	}>
 >;
 
-export class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
+export class StructBase<Fields extends Field[] = []>
+	implements ProxyValueBuilder
+{
 	#size: number;
 	protected constructor(private fields: Fields) {
 		this.#size = this.fields.reduce((acc, f) => acc + f.builder.size, 0);
@@ -53,8 +55,11 @@ export class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 	field<Name extends string, Builder extends ValueBuilder<any, any>>(
 		name: Name,
 		builder: Builder,
-	): Struct<[...Fields, { name: Name; builder: Builder; offset: number }]> {
-		return new Struct([...this.fields, { name, builder, offset: this.#size }]);
+	): StructBase<[...Fields, { name: Name; builder: Builder; offset: number }]> {
+		return new StructBase([
+			...this.fields,
+			{ name, builder, offset: this.#size },
+		]);
 	}
 
 	#proxy(
