@@ -71,8 +71,13 @@ fn well_known_or(ty: &str) -> String {
 }
 
 #[napi]
-pub fn generate(headers: Vec<String>, dump_rust_code: Option<bool>) -> Result<String> {
+pub fn generate(
+    headers: Vec<&str>,
+    dump_rust_code: Option<bool>,
+    clang_args: Option<Vec<&str>>,
+) -> Result<String> {
     let bindings = bindgen::builder()
+        .clang_args(clang_args.unwrap_or(vec![]))
         .disable_header_comment()
         .layout_tests(false)
         .derive_copy(false)
@@ -90,7 +95,7 @@ pub fn generate(headers: Vec<String>, dump_rust_code: Option<bool>) -> Result<St
 
     let rust = String::from_utf8(buf).map_err(err)?;
 
-    if dump_rust_code.unwrap_or(false) {
+    if let Some(true) = dump_rust_code {
         println!("{}\n", rust);
     }
 
