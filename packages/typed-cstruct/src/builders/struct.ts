@@ -40,6 +40,18 @@ export type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 	}>
 >;
 
+export type OverrideField<
+	Fields extends Field[],
+	Name extends Fields[number]["name"],
+	Builder extends ValueBuilder<any, any>,
+> = Fields extends [infer First, ...infer Rest]
+	? First extends { name: Name }
+		? [{ name: Name; builder: Builder; offset: number }, ...Rest]
+		: Rest extends Field[]
+			? [First, ...OverrideField<Rest, Name, Builder>]
+			: never
+	: never;
+
 class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 	#size: number;
 	protected constructor(private fields: Fields) {
@@ -55,6 +67,21 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 		builder: Builder,
 	): Struct<[...Fields, { name: Name; builder: Builder; offset: number }]> {
 		return new Struct([...this.fields, { name, builder, offset: this.#size }]);
+	}
+	override<
+		Name extends Fields[number]["name"],
+		Builder extends ValueBuilder<any, any>,
+	>(
+		name: Name,
+		builder: Builder,
+	): Struct<OverrideField<Fields, Name, Builder>> {
+		const fields = this.fields.reduce<Field[]>((acc, f) => {
+			const prev = acc.at(-1);
+			const offset = prev ? prev.offset + prev.builder.size : 0;
+			acc.push(f.name === name ? { name, builder, offset } : { ...f, offset });
+			return acc;
+		}, []);
+		return new Struct(fields as OverrideField<Fields, Name, Builder>);
 	}
 
 	#proxy(

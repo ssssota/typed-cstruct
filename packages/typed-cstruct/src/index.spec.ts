@@ -23,6 +23,32 @@ it("single field", () => {
 	expect(struct.read(opts)).toStrictEqual({ a: 3 });
 	expect(buf).toStrictEqual(new Uint8Array([0x03]));
 });
+it("override single field", () => {
+	/**
+	 * ```c
+	 * union U8orI8 {
+	 *   uint8_t u8;
+	 *   int8_t i8;
+	 * }
+	 * struct {
+	 *   U8orI8 a;
+	 * } buf = { 0xff };
+	 * ```
+	 */
+	const buf = new Uint8Array([0xff]);
+	const opts = { buf };
+	const struct = new typ.Struct().field("a", typ.u8);
+	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{ a: number }>();
+	expect(struct.read(opts)).toStrictEqual({ a: 255 });
+	const newStruct = struct.override("a", typ.i8);
+	expectTypeOf(newStruct.proxy(opts)).toEqualTypeOf<{ a: number }>();
+	expect(newStruct.read(opts)).toStrictEqual({ a: -1 });
+
+	struct.proxy(opts).a = 127; // 0x7f
+	expect(newStruct.read(opts)).toStrictEqual({ a: 127 });
+	newStruct.proxy(opts).a = -128; // 0x80
+	expect(struct.read(opts)).toStrictEqual({ a: 128 });
+});
 it("multiple fields", () => {
 	/**
 	 * ```c
