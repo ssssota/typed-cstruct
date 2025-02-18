@@ -35,24 +35,27 @@ export function sizedArray<T>(
 					return defaultValue;
 				const index = Number(prop);
 				if (index < 0 || size <= index) return undefined;
-				const { buf, offset = 0 } = opts;
+				const { offset = 0 } = opts;
 				if (useProxy && typeof builder.proxy === "function") {
 					return builder.proxy(
-						{ buf, offset: offset + index * builder.size },
+						{ ...opts, offset: offset + index * builder.size },
 						{},
 					);
 				}
-				return builder.read({ buf, offset: offset + index * builder.size }, {});
+				return builder.read(
+					{ ...opts, offset: offset + index * builder.size },
+					{},
+				);
 			},
 			set(_, prop, value) {
 				if (typeof prop === "symbol") return false;
 				const index = Number(prop);
 				if (!Number.isFinite(index)) return false;
-				const { buf, offset = 0 } = opts;
+				const { offset = 0 } = opts;
 				if (typeof builder.write !== "function") return false;
 				builder.write?.(
 					value,
-					{ buf, offset: offset + index * builder.size },
+					{ ...opts, offset: offset + index * builder.size },
 					{},
 				);
 				return true;
@@ -67,11 +70,11 @@ export function sizedArray<T>(
 		},
 		write(value, opts, ctx) {
 			if (typeof builder.write !== "function") return;
-			const { buf, offset = 0 } = opts;
+			const { offset = 0 } = opts;
 			for (let i = 0; i < size; i++) {
 				builder.write(
 					value[i],
-					{ buf, offset: offset + i * builder.size },
+					{ ...opts, offset: offset + i * builder.size },
 					ctx,
 				);
 			}
@@ -88,7 +91,7 @@ export function pointerArrayFromLengthField<T, FieldName extends string>(
 			const ptr = readU32(opts);
 			const size = ctx[fieldName];
 			return Array.from({ length: size }, (_, i) =>
-				builder.read({ buf: opts.buf, offset: ptr + i * builder.size }, {}),
+				builder.read({ ...opts, offset: ptr + i * builder.size }, {}),
 			);
 		},
 	};
