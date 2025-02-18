@@ -3,13 +3,26 @@ import type {
 	ReadonlyValueBuilder,
 	ValueBuilder,
 	ValueBuilderOptions,
+	WritableValueBuilder,
 } from "../types.js";
 import { readU32 } from "../utils.js";
 
 export function sizedArray<T>(
+	builder: ReadonlyValueBuilder<T>,
+	size: number,
+): ReadonlyValueBuilder<T[]>;
+export function sizedArray<T>(
+	builder: WritableValueBuilder<T>,
+	size: number,
+): ProxyValueBuilder<T[]>;
+export function sizedArray<T>(
+	builder: ProxyValueBuilder<T>,
+	size: number,
+): ProxyValueBuilder<T[]>;
+export function sizedArray<T>(
 	builder: ValueBuilder<T>,
 	size: number,
-): ProxyValueBuilder<T[]> {
+): ValueBuilder<T[]> {
 	const proxy = (
 		opts: ValueBuilderOptions,
 		_: Record<string, unknown>,
@@ -37,7 +50,7 @@ export function sizedArray<T>(
 				if (!Number.isFinite(index)) return false;
 				const { buf, offset = 0 } = opts;
 				if (typeof builder.write !== "function") return false;
-				builder.write(
+				builder.write?.(
 					value,
 					{ buf, offset: offset + index * builder.size },
 					{},
