@@ -643,3 +643,24 @@ it("readme sample", () => {
 	// 2d. Get size of a struct
 	expect(struct.size).toBe(7);
 });
+it("string array", () => {
+	const encoder = new TextEncoder();
+	/**
+	 * ```c
+	 * char **strings = { "foo", "bar", "baz" };
+	 * ```
+	 */
+	// biome-ignore format: binary readability
+	const strings = new Uint8Array([
+		0x00, 0x00, 0x00, 0x0c, // foo ptr
+		0x00, 0x00, 0x00, 0x10, // bar ptr
+		0x00, 0x00, 0x00, 0x14, // baz ptr
+		...encoder.encode("foo\0"),
+		...encoder.encode("bar\0"),
+		...encoder.encode("baz\0"),
+	]);
+	const opts = { buf: strings };
+	const array = typ.sizedArray(typ.charPointerAsString(), 3);
+	expectTypeOf(array.read(opts, {})).toEqualTypeOf<string[]>();
+	expect(array.read(opts, {})).toStrictEqual(["foo", "bar", "baz"]);
+});
