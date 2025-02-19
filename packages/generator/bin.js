@@ -21,7 +21,7 @@ const { values, positionals } = parseArgs({
 			type: "string",
 			multiple: true,
 		},
-		"ignore-entities": {
+		"entry-types": {
 			type: "string",
 			multiple: true,
 		},
@@ -52,7 +52,7 @@ fs.writeFileSync(
 		values.header,
 		values["dump-rust-code"],
 		values["clang-args"],
-		values["ignore-entities"],
+		values["entry-types"],
 	),
 );
 
@@ -65,6 +65,9 @@ function help() {
 	);
 	console.log(
 		"  --clang-args <args>    Additional arguments to pass to clang (multiple allowed)",
+	);
+	console.log(
+		"  --entry-types <types>  Entrypoint types to generate (multiple allowed)",
 	);
 	console.log("  --help                 Show this help");
 	console.log("Arguments:");
