@@ -130,7 +130,7 @@ pub fn rust_to_ts(rust: &str, entry_types: Vec<&str>) -> Result<String> {
     }
     let enums = find_enums(&visitor);
     for (enum_name, enum_def) in sort_hashmap!(&enums, String, Enum) {
-        let entity = print_enum(&enum_name, &enum_def);
+        let entity = print_enum(enum_name, enum_def);
         entities.insert(entity.name.clone(), entity);
     }
 
