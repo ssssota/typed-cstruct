@@ -1,16 +1,11 @@
 use napi::bindgen_prelude::*;
-use phf::{phf_map, phf_set};
+use phf::phf_map;
 use std::collections::{HashMap, HashSet};
 use syn::visit::Visit;
 
 #[macro_use]
 extern crate napi_derive;
 
-static IGNORE_TYPES: phf::Set<&'static str> = phf_set! {
-    "__BindgenOpaqueArray",
-    "__BindgenBitfieldUnit",
-    "__BindgenUnionField",
-};
 static WELL_KNOWN_TYPES: phf::Map<&'static str, &'static str> = phf_map! {
     // https://doc.rust-lang.org/core/ffi/index.html#types
     // c_char Equivalent to C’s `char` type.
@@ -82,7 +77,7 @@ pub fn generate(
     headers: Vec<&str>,
     dump_rust_code: Option<bool>,
     clang_args: Option<Vec<&str>>,
-    ignore_entities: Option<Vec<&str>>,
+    entry_types: Option<Vec<&str>>,
 ) -> Result<String> {
     let bindings = bindgen::builder()
         .clang_args(clang_args.unwrap_or_default())
@@ -109,113 +104,61 @@ pub fn generate(
     }
 
     // Ok(rust)
-    rust_to_ts(&rust, ignore_entities.unwrap_or_default())
+    rust_to_ts(&rust, entry_types.unwrap_or_default())
 }
 
-pub fn rust_to_ts(rust: &str, ignore_entities: Vec<&str>) -> Result<String> {
+struct Entity {
+    name: String,
+    code: String,
+    deps: Vec<String>,
+}
+
+pub fn rust_to_ts(rust: &str, entry_types: Vec<&str>) -> Result<String> {
     let ast: syn::File = syn::parse_str(rust).map_err(err)?;
     let mut visitor = DeclarationVisitor::new();
     visitor.visit_file(&ast);
 
-    let mut result = "import * as __typ from 'typed-cstruct';\n".to_string();
-    let mut created = HashSet::new();
-    let mut used = HashSet::new();
+    let mut code_parts = vec![];
+    let mut entities: HashMap<String, Entity> = HashMap::new();
+    for a in &visitor.types {
+        let entity = print_item_type(a);
+        entities.insert(entity.name.clone(), entity);
+    }
     for s in &visitor.structs {
-        let name = s.ident.to_string();
-        if IGNORE_TYPES.contains(name.as_str()) {
-            continue;
-        }
-        if ignore_entities.contains(&name.as_str()) {
-            continue;
-        }
-        result.push_str("export function ");
-        result.push_str(&name);
-        result.push_str("() {\n");
-        result.push_str("  return new __typ.Struct()\n");
-        if let syn::Fields::Named(named_fields) = &s.fields {
-            for f in &named_fields.named {
-                let (ty, used2) = print_type(&f.ty);
-                result.push_str("    .field('");
-                result.push_str(&f.ident.as_ref().unwrap().to_string());
-                result.push_str("', ");
-                result.push_str(&ty);
-                result.push_str(")\n");
-                for u in used2 {
-                    if !WELL_KNOWN_TYPES.contains_key(&u) {
-                        used.insert(u);
-                    }
-                }
-            }
-            created.insert(name);
-        }
-        result.push_str("}\n");
+        let entity = print_struct(s);
+        entities.insert(entity.name.clone(), entity);
     }
     let enums = find_enums(&visitor);
-    for (enum_name, enum_def) in sort_hashmap!(enums, String, Enum) {
-        if ignore_entities.contains(&enum_name.as_str()) {
-            continue;
-        }
-        let (ty, used2) = print_type(&enum_def.ty);
-        result.push_str("export function ");
-        result.push_str(enum_name);
-        result.push_str("() {\n");
-        result.push_str("  return __typ.enumLike(");
-        result.push_str(&ty);
-        result.push_str(", {\n");
-        let mut sorted = enum_def
-            .variants
-            .iter()
-            .collect::<Vec<(&String, &String)>>();
-        sorted.sort_by(|a, b| a.1.cmp(b.1));
-        for (k, v) in sort_hashmap!(enum_def.variants, String, String) {
-            result.push_str(format!("    {k}: {v},\n").as_str());
-        }
-        result.push_str("  })\n");
-        result.push_str("}\n");
-        created.insert(enum_name.to_string());
-        for u in used2 {
-            if !WELL_KNOWN_TYPES.contains_key(&u) {
-                used.insert(u);
-            }
-        }
-    }
-    let not_created_types = visitor
-        .types
-        .iter()
-        .filter(|t| !created.contains(&t.ident.to_string()))
-        .collect::<Vec<&&syn::ItemType>>();
-    for a in not_created_types {
-        let name = a.ident.to_string();
-        if ignore_entities.contains(&name.as_str()) {
-            continue;
-        }
-        let (ty, used2) = print_type(&a.ty);
-        result.push_str("export function ");
-        result.push_str(&name);
-        result.push_str("() {\n");
-        result.push_str("  return ");
-        result.push_str(&ty);
-        result.push_str(";\n");
-        result.push_str("}\n");
-        created.insert(name);
-        for u in used2 {
-            if !WELL_KNOWN_TYPES.contains_key(&u) {
-                used.insert(u);
-            }
-        }
-    }
-    let used_but_not_created = used.difference(&created);
-    let used_but_not_created = used_but_not_created
-        .filter(|u| !IGNORE_TYPES.contains(u.as_str()))
-        .collect::<Vec<&String>>();
-    if !used_but_not_created.is_empty() {
-        return Err(err(format!(
-            "used but not created: {:?}",
-            used_but_not_created,
-        )));
+    for (enum_name, enum_def) in sort_hashmap!(&enums, String, Enum) {
+        let entity = print_enum(&enum_name, &enum_def);
+        entities.insert(entity.name.clone(), entity);
     }
 
-    Ok(result)
+    if entry_types.is_empty() {
+        for (_, entity) in entities {
+            code_parts.push(entity.code);
+        }
+    } else {
+        let mut queue = entry_types
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+        let mut visited = HashSet::new();
+        while let Some(name) = queue.pop() {
+            if visited.contains(&name) {
+                continue;
+            }
+            visited.insert(name.clone());
+            if let Some(entity) = entities.get(&name) {
+                code_parts.push(entity.code.clone());
+                queue.extend(entity.deps.iter().cloned());
+            }
+        }
+    }
+    code_parts.sort();
+    code_parts.insert(0, "import * as __typ from 'typed-cstruct';".to_string());
+
+    Ok(code_parts.join("\n"))
 }
 
 struct DeclarationVisitor<'ast> {
@@ -293,6 +236,73 @@ fn print_type(ty: &syn::Type) -> (String, Vec<String>) {
         }
         _ => unimplemented!("unsupported type"),
     }
+}
+fn print_struct(s: &syn::ItemStruct) -> Entity {
+    let mut code_parts: Vec<String> = vec![];
+    let mut deps: Vec<String> = vec![];
+    let name = s.ident.to_string();
+
+    code_parts.push("export function ".to_string());
+    code_parts.push(name.clone());
+    code_parts.push("() {\n".to_string());
+    code_parts.push("  return new __typ.Struct()\n".to_string());
+    if let syn::Fields::Named(named_fields) = &s.fields {
+        for f in &named_fields.named {
+            let (ty, used) = print_type(&f.ty);
+            code_parts.push("    .field('".to_string());
+            code_parts.push(f.ident.as_ref().unwrap().to_string());
+            code_parts.push("', ".to_string());
+            code_parts.push(ty);
+            code_parts.push(")\n".to_string());
+            deps.extend(used);
+        }
+    }
+    code_parts.push("}".to_string());
+
+    Entity {
+        name,
+        code: code_parts.concat(),
+        deps,
+    }
+}
+fn print_enum(name: &str, enum_def: &Enum) -> Entity {
+    let mut code_parts: Vec<String> = vec![];
+    let mut deps: Vec<String> = vec![];
+
+    let (ty, used) = print_type(&enum_def.ty);
+    code_parts.push("export function ".to_string());
+    code_parts.push(name.to_string());
+    code_parts.push("() {\n".to_string());
+    code_parts.push("  return __typ.enumLike(".to_string());
+    code_parts.push(ty);
+    code_parts.push(", {\n".to_string());
+    let mut sorted = enum_def
+        .variants
+        .iter()
+        .collect::<Vec<(&String, &String)>>();
+    sorted.sort_by(|a, b| a.1.cmp(b.1));
+    for (k, v) in sort_hashmap!(enum_def.variants, String, String) {
+        code_parts.push(format!("    {k}: {v},\n"));
+    }
+    code_parts.push("  })\n".to_string());
+    code_parts.push("}".to_string());
+    deps.extend(used);
+
+    Entity {
+        name: name.to_string(),
+        code: code_parts.concat(),
+        deps,
+    }
+}
+fn print_item_type(t: &syn::ItemType) -> Entity {
+    let (ty, deps) = print_type(&t.ty);
+    let name = t.ident.to_string();
+    let code = format!(
+        "export function {name}() {{\n  return {ty};\n}}",
+        name = name,
+        ty = ty
+    );
+    Entity { name, code, deps }
 }
 
 struct Enum {
@@ -432,7 +442,7 @@ mod tests {
             struct B { c: C }
             type C = i32;
         "#;
-        let ts = rust_to_ts(rust, vec!["A"]).unwrap();
+        let ts = rust_to_ts(rust, vec!["B"]).unwrap();
         insta::assert_snapshot!(ts);
     }
 }
