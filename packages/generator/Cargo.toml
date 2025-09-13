@@ -14,7 +14,7 @@ napi-derive = "2.12.2"
 syn = { version = "2.0", features = ["parsing", "visit"] }
 bindgen = "0.71"
 
-phf = { version = "0.11", features = ["macros"] }
+phf = { version = "0.13", features = ["macros"] }
 
 [build-dependencies]
 napi-build = "2.0.1"
