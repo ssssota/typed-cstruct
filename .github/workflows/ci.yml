@@ -8,7 +8,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-node
       - run: pnpm check
       - run: pnpm build
@@ -22,7 +22,7 @@ jobs:
       run:
         working-directory: packages/typed-cstruct
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-node
       - run: pnpm coverage
       - uses: codecov/codecov-action@v5
@@ -34,7 +34,7 @@ jobs:
   rust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-rust
       - run: cargo fmt --all --check
       - run: cargo clippy --all
