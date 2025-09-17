@@ -1,3 +1,4 @@
+import { alignment } from "../alignment.js";
 import type {
 	Prettify,
 	ProxyValueBuilder,
@@ -7,6 +8,7 @@ import type {
 	ValueBuilderOptions,
 	WritableValueBuilder,
 } from "../types.js";
+import { padding } from "./utils.js";
 
 export type Field<T extends ValueBuilder = ValueBuilder> = {
 	name: string;
@@ -53,20 +55,43 @@ export type OverrideField<
 	: never;
 
 class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
+	#alignment: number;
 	#size: number;
 	protected constructor(private fields: Fields) {
-		this.#size = this.fields.reduce((acc, f) => acc + f.builder.size, 0);
+		this.#alignment = Math.max(
+			1,
+			...this.fields.map((f) => alignment(f.builder)),
+		);
+		this.#size = paddingToSize(this.#internalSize, this.#alignment);
 	}
 
 	get size(): number {
 		return this.#size;
 	}
+	get alignment(): number {
+		return this.#alignment;
+	}
+	get #internalSize(): number {
+		const lastField = this.fields[this.fields.length - 1];
+		if (!lastField) return 0;
+		return lastField.offset + lastField.builder.size;
+	}
 
+	// Add field
 	field<Name extends string, Builder extends ValueBuilder<any, any>>(
 		name: Name,
 		builder: Builder,
 	): Struct<[...Fields, { name: Name; builder: Builder; offset: number }]> {
-		return new Struct([...this.fields, { name, builder, offset: this.#size }]);
+		const offset = paddingToSize(this.#internalSize, alignment(builder));
+		return new Struct([...this.fields, { name, builder, offset }]);
+	}
+	padding(size: number): Struct<Fields> {
+		this.fields.push({
+			name: "\0",
+			builder: padding(size),
+			offset: this.#internalSize,
+		});
+		return this;
 	}
 	override<
 		Name extends Fields[number]["name"],
@@ -84,6 +109,7 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 		return new Struct(fields as OverrideField<Fields, Name, Builder>);
 	}
 
+	// Accessor
 	#proxy(
 		opts: ValueBuilderOptions,
 		useProxy = false,
@@ -151,3 +177,9 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 	}
 }
 export { Struct as StructBase };
+
+function paddingToSize(size: number, alignment: number) {
+	const remainder = size % alignment;
+	if (remainder === 0) return size;
+	return size + (alignment - remainder);
+}
