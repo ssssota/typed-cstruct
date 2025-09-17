@@ -81,5 +81,5 @@ export function ptr<T>(builder: ValueBuilder<T>): ValueBuilder<T | null> {
 }
 
 export function padding(size: number): ReadonlyValueBuilder<undefined> {
-	return { size, read: () => undefined };
+	return { size, alignment: 1, read: () => undefined };
 }

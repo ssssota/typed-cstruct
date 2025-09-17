@@ -59,10 +59,10 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 	#size: number;
 	protected constructor(private fields: Fields) {
 		this.#alignment = Math.max(
-			0,
+			1,
 			...this.fields.map((f) => alignment(f.builder)),
 		);
-		this.#size = this.#paddingToSize(this.#internalSize, this.#alignment);
+		this.#size = paddingToSize(this.#internalSize, this.#alignment);
 	}
 
 	get size(): number {
@@ -82,7 +82,7 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 		name: Name,
 		builder: Builder,
 	): Struct<[...Fields, { name: Name; builder: Builder; offset: number }]> {
-		const offset = this.#paddingToSize(this.#internalSize, alignment(builder));
+		const offset = paddingToSize(this.#internalSize, alignment(builder));
 		return new Struct([...this.fields, { name, builder, offset }]);
 	}
 	padding(size: number): Struct<Fields> {
@@ -175,12 +175,11 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 			proxy[key] = value[key];
 		}
 	}
-
-	// utils
-	#paddingToSize(size: number, alignment: number) {
-		const remainder = size % alignment;
-		if (remainder === 0) return size;
-		return size + (alignment - remainder);
-	}
 }
 export { Struct as StructBase };
+
+function paddingToSize(size: number, alignment: number) {
+	const remainder = size % alignment;
+	if (remainder === 0) return size;
+	return size + (alignment - remainder);
+}

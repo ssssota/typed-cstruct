@@ -688,3 +688,70 @@ it("padding", () => {
 	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{ a: number; b: number }>();
 	expect(struct.proxy(opts)).toEqual({ a: 1, b: 2 });
 });
+
+it("alignment", () => {
+	/**
+	 * ```c
+	 * typedef struct {
+	 *   uint8_t a;
+	 *   // 3 bytes padding here
+	 *   uint32_t b;
+	 * } StructA;
+	 * typedef struct {
+	 *   uint16_t c;
+	 *   StructA d;
+	 * } StructB;
+	 * typedef struct {
+	 *   uint8_t e;
+	 *   // 3 bytes padding here
+	 *   StructA f;
+	 *   StructB g;
+	 * } StructC;
+	 * StructC buf = {
+	 *   0x01, // e
+	 *   { 0x02, 0x00000003 }, // f
+	 *   { 0x0004, { 0x05, 0x00000006 } } // g
+	 * };
+	 * ```
+	 */
+	// biome-ignore format: binary readability
+	const buf = new Uint8Array([
+		0x01, 0x00, 0x00, 0x00, // e + padding
+		0x02, 0x00, 0x00, 0x00, // a + padding
+		0x03, 0x00, 0x00, 0x00, // b
+		0x04, 0x00, // c
+		0x00, 0x00, // padding
+		0x05, 0x00, 0x00, 0x00, // a + padding
+		0x06, 0x00, 0x00, 0x00, // b
+	]);
+	const opts = { buf };
+	const structA = new typ.Struct().field("a", typ.u8).field("b", typ.u32);
+	const structB = new typ.Struct().field("c", typ.u16).field("d", structA);
+	const structC = new typ.Struct()
+		.field("e", typ.u8)
+		.field("f", structA)
+		.field("g", structB);
+	expectTypeOf(structC.proxy(opts)).toEqualTypeOf<{
+		e: number;
+		f: { a: number; b: number };
+		g: { c: number; d: { a: number; b: number } };
+	}>();
+	expect(structC.proxy(opts)).toEqual({
+		e: 1,
+		f: { a: 2, b: 3 },
+		g: { c: 4, d: { a: 5, b: 6 } },
+	});
+	expectTypeOf(structC.read(opts)).toEqualTypeOf<{
+		readonly e: number;
+		readonly f: { readonly a: number; readonly b: number };
+		readonly g: {
+			readonly c: number;
+			readonly d: { readonly a: number; readonly b: number };
+		};
+	}>();
+	expect(structC.read(opts)).toStrictEqual({
+		e: 1,
+		f: { a: 2, b: 3 },
+		g: { c: 4, d: { a: 5, b: 6 } },
+	});
+});
