@@ -9,9 +9,11 @@
 		"ignoreUnknown": false,
 		"ignore": [
 			"packages/typed-cstruct/dist",
+			"packages/typed-cstruct/docs",
 			"packages/typed-cstruct/coverage",
 			"packages/generator/index.*",
-			"packages/generator/npm"
+			"packages/generator/npm",
+			"target"
 		]
 	},
 	"formatter": {
