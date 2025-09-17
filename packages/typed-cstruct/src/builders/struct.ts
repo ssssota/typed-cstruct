@@ -89,7 +89,7 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 		this.fields.push({
 			name: "\0",
 			builder: padding(size),
-			offset: this.#size,
+			offset: this.#internalSize,
 		});
 		return this;
 	}
