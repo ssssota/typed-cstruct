@@ -7,21 +7,19 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": [
-			"packages/typed-cstruct/dist",
-			"packages/typed-cstruct/docs",
-			"packages/typed-cstruct/coverage",
-			"packages/generator/index.*",
-			"packages/generator/npm",
-			"target"
+		"includes": [
+			"**",
+			"!**/packages/typed-cstruct/dist",
+			"!**/packages/typed-cstruct/docs",
+			"!**/packages/typed-cstruct/coverage",
+			"!**/packages/generator/index.*",
+			"!**/packages/generator/npm",
+			"!**/target"
 		]
 	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab"
-	},
-	"organizeImports": {
-		"enabled": true
 	},
 	"linter": {
 		"enabled": true,
@@ -35,6 +33,11 @@
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"actions": {
+			"source": { "organizeImports": "on" }
 		}
 	}
 }

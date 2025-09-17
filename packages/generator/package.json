@@ -28,7 +28,12 @@
 			]
 		}
 	},
-	"files": ["index.js", "index.mjs", "index.d.ts", "bin.js"],
+	"files": [
+		"index.js",
+		"index.mjs",
+		"index.d.ts",
+		"bin.js"
+	],
 	"license": "MIT",
 	"repository": {
 		"type": "git",

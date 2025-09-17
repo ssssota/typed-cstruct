@@ -19,8 +19,15 @@
 		"prepare": "pnpm clean && pnpm build",
 		"doc": "typedoc src/index.ts"
 	},
-	"keywords": ["c", "struct", "proxy", "reader"],
-	"files": ["dist"],
+	"keywords": [
+		"c",
+		"struct",
+		"proxy",
+		"reader"
+	],
+	"files": [
+		"dist"
+	],
 	"author": "TOMIKAWA Sotaro <tommysouta@gmail.com>",
 	"license": "MIT",
 	"repository": {

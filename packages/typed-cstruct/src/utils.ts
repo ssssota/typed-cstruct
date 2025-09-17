@@ -1,4 +1,5 @@
 import type { ValueBuilderOptions } from "./types.js";
+
 const big = "big";
 export function view(buf: Uint8Array): DataView {
 	return new DataView(buf.buffer);
