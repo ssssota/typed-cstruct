@@ -4,6 +4,6 @@ export class Struct<Fields extends Field[] = []> extends StructBase<Fields> {
 		super([] as unknown as Fields);
 	}
 }
-export * from "./types.js";
 export * from "./builders/index.js";
+export * from "./types.js";
 export * from "./utils.js";
