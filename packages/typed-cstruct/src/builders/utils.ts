@@ -79,3 +79,7 @@ export function ptr<T>(builder: ValueBuilder<T>): ValueBuilder<T | null> {
 
 	return { size: 4, read, write, proxy };
 }
+
+export function padding(size: number): ReadonlyValueBuilder<undefined> {
+	return { size, read: () => undefined };
+}

@@ -332,6 +332,7 @@ it("length from field", () => {
 	const buf = new Uint8Array([
 		0x48, 0x65, 0x6c, 0x6c, 0x6f, // "Hello"
 		0x05, // length
+		0x00, 0x00, 0x00, // padding to align 4-byte
 		0x00, 0x00, 0x00, 0x00, // str*
 	]);
 	const opts = { buf, offset: 5 };
@@ -364,6 +365,7 @@ it("length from field", () => {
 		new Uint8Array([
 			0x48, 0x65, 0x6c, 0x6c, 0x6f, // "Hello"
 			0x04, // length
+			0x00, 0x00, 0x00, // padding to align 4-byte
 			0x00, 0x00, 0x00, 0x00, // str*
 		]),
 	);
@@ -462,11 +464,16 @@ it("ptr", () => {
 	 *   struct {
 	 *     uint8_t c;
 	 *   } *d;
-	 * } buf = { 0x09, 0x00, 0x00, 0x00, 0x01, 0x09, 0x00, 0x00, 0x00 };
+	 * } buf = { 0x0c, 0x00, 0x00, 0x00, 0x01, 0x0c, 0x00, 0x00, 0x00 };
 	 * ```
 	 */
+	// biome-ignore format: binary readability
 	const buf = new Uint8Array([
-		0x09, 0x00, 0x00, 0x00, 0x01, 0x09, 0x00, 0x00, 0x00, 0x02,
+		0x0c, 0x00, 0x00, 0x00, // *a
+		0x01, // b
+		0x00, 0x00, 0x00, // padding to align 4-byte
+		0x0c, 0x00, 0x00, 0x00, // *d
+		0x02,
 	]);
 	const opts = { buf };
 	const struct = new typ.Struct()
@@ -491,8 +498,13 @@ it("ptr", () => {
 	if (d) d.c = 4;
 	expect(struct.read(opts)).toStrictEqual({ a: 4, b: 1, d: { c: 4 } });
 	expect(buf).toStrictEqual(
+		// biome-ignore format: binary readability
 		new Uint8Array([
-			0x09, 0x00, 0x00, 0x00, 0x01, 0x09, 0x00, 0x00, 0x00, 0x04,
+			0x0c, 0x00, 0x00, 0x00, // *a
+			0x01, // b
+			0x00, 0x00, 0x00, // padding to align 4-byte
+			0x0c, 0x00, 0x00, 0x00, // *d
+			0x04,
 		]),
 	);
 	expect(() => {
@@ -613,6 +625,7 @@ it("readme sample", () => {
 	// biome-ignore format: binary readability
 	const buf = new Uint8Array([
 		0x01, // a
+		0x00, // padding for alignment
 		0x02, 0x03, // b
 		0x00, 0x00, 0x80, 0x3f, // c
 	]);
@@ -628,20 +641,20 @@ it("readme sample", () => {
 	expect(obj).toEqual({ a: 1, b: 0x0302, c: 1.0 });
 
 	// 2b. Write a struct to a buffer
-	const newBuf = new Uint8Array(7);
+	const newBuf = new Uint8Array(8);
 	struct.write({ a: 2, b: 0x0403, c: 2.0 }, { buf: newBuf });
 	expect(newBuf).toStrictEqual(
-		new Uint8Array([0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x40]),
+		new Uint8Array([0x02, 0x00, 0x03, 0x04, 0x00, 0x00, 0x00, 0x40]),
 	);
 
 	// 2c. Overwrite a field
 	struct.proxy({ buf: newBuf }).a = 3;
 	expect(newBuf).toStrictEqual(
-		new Uint8Array([0x03, 0x03, 0x04, 0x00, 0x00, 0x00, 0x40]),
+		new Uint8Array([0x03, 0x00, 0x03, 0x04, 0x00, 0x00, 0x00, 0x40]),
 	);
 
 	// 2d. Get size of a struct
-	expect(struct.size).toBe(7);
+	expect(struct.size).toBe(8);
 });
 it("string array", () => {
 	const encoder = new TextEncoder();
@@ -663,4 +676,15 @@ it("string array", () => {
 	const array = typ.sizedArray(typ.charPointerAsString(), 3);
 	expectTypeOf(array.read(opts, {})).toEqualTypeOf<string[]>();
 	expect(array.read(opts, {})).toStrictEqual(["foo", "bar", "baz"]);
+});
+
+it("padding", () => {
+	const buf = new Uint8Array([0x01, 0x00, 0x00, 0x02]);
+	const opts = { buf };
+	const struct = new typ.Struct()
+		.field("a", typ.u8)
+		.padding(2)
+		.field("b", typ.u8);
+	expectTypeOf(struct.proxy(opts)).toEqualTypeOf<{ a: number; b: number }>();
+	expect(struct.proxy(opts)).toEqual({ a: 1, b: 2 });
 });

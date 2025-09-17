@@ -21,6 +21,7 @@ export interface ValueBuilder<
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
 > {
 	readonly size: number;
+	readonly alignment?: number;
 	proxy?(opts: ValueBuilderOptions, ctx: Ctx): T;
 	read(opts: ValueBuilderOptions, ctx: Ctx): NoInfer<T>;
 	write?(value: T, opts: ValueBuilderOptions, ctx: Ctx): void;
@@ -30,6 +31,7 @@ export type ReadonlyValueBuilder<
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = {
 	readonly size: number;
+	readonly alignment?: number;
 	proxy?: undefined;
 	read(opts: ValueBuilderOptions, ctx: Ctx): T;
 	write?: undefined;
@@ -39,6 +41,7 @@ export type WritableValueBuilder<
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = {
 	readonly size: number;
+	readonly alignment?: number;
 	proxy?: undefined;
 	read(opts: ValueBuilderOptions, ctx: Ctx): T;
 	write(value: T, opts: ValueBuilderOptions, ctx: Ctx): void;
@@ -48,6 +51,7 @@ export type ProxyValueBuilder<
 	Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = {
 	readonly size: number;
+	readonly alignment?: number;
 	proxy(opts: ValueBuilderOptions, ctx: Ctx): T;
 	read(opts: ValueBuilderOptions, ctx: Ctx): NoInfer<T>;
 	write(value: T, opts: ValueBuilderOptions, ctx: Ctx): void;
