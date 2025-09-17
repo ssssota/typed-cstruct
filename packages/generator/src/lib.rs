@@ -74,10 +74,10 @@ fn well_known_or(ty: &str) -> String {
 
 #[napi]
 pub fn generate(
-    headers: Vec<&str>,
+    headers: Vec<String>,
     dump_rust_code: Option<bool>,
-    clang_args: Option<Vec<&str>>,
-    entry_types: Option<Vec<&str>>,
+    clang_args: Option<Vec<String>>,
+    entry_types: Option<Vec<String>>,
 ) -> Result<String> {
     let bindings = bindgen::builder()
         .clang_args(clang_args.unwrap_or_default())
@@ -104,7 +104,14 @@ pub fn generate(
     }
 
     // Ok(rust)
-    rust_to_ts(&rust, entry_types.unwrap_or_default())
+    rust_to_ts(
+        &rust,
+        entry_types
+            .unwrap_or_default()
+            .iter()
+            .map(|s| s.as_str())
+            .collect(),
+    )
 }
 
 struct Entity {
