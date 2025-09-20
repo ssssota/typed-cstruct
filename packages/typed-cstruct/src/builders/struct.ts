@@ -16,13 +16,11 @@ export type Field<T extends ValueBuilder = ValueBuilder> = {
 	offset: number;
 };
 export type TupleToUnion<T> = T extends (infer U)[] ? U : never;
-export type UnionToIntersection<U> = (
-	U extends any
-		? (arg: U) => void
-		: never
-) extends (arg: infer I) => void
-	? I
-	: never;
+export type UnionToIntersection<U> =
+	// biome-ignore lint/suspicious/noExplicitAny: Required for conditional type distribution over unions
+	(U extends any ? (arg: U) => void : never) extends (arg: infer I) => void
+		? I
+		: never;
 export type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 	TupleToUnion<{
 		[K in keyof Fields]: Fields[K] extends {
@@ -45,7 +43,7 @@ export type ObjFromFields<Fields extends Field[]> = UnionToIntersection<
 export type OverrideField<
 	Fields extends Field[],
 	Name extends Fields[number]["name"],
-	Builder extends ValueBuilder<any, any>,
+	Builder extends ValueBuilder,
 > = Fields extends [infer First, ...infer Rest]
 	? First extends { name: Name }
 		? [{ name: Name; builder: Builder; offset: number }, ...Rest]
@@ -78,7 +76,7 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 	}
 
 	// Add field
-	field<Name extends string, Builder extends ValueBuilder<any, any>>(
+	field<Name extends string, Builder extends ValueBuilder>(
 		name: Name,
 		builder: Builder,
 	): Struct<[...Fields, { name: Name; builder: Builder; offset: number }]> {
@@ -93,10 +91,7 @@ class Struct<Fields extends Field[] = []> implements ProxyValueBuilder {
 		});
 		return this;
 	}
-	override<
-		Name extends Fields[number]["name"],
-		Builder extends ValueBuilder<any, any>,
-	>(
+	override<Name extends Fields[number]["name"], Builder extends ValueBuilder>(
 		name: Name,
 		builder: Builder,
 	): Struct<OverrideField<Fields, Name, Builder>> {

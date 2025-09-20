@@ -1,5 +1,5 @@
 import type { ValueBuilder } from "./types.js";
 
-export function alignment(builder: ValueBuilder<any, any>): number {
+export function alignment(builder: ValueBuilder): number {
 	return builder.alignment ?? builder.size;
 }
