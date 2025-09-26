@@ -8,6 +8,10 @@ runs:
       with:
         node-version: lts/*
         cache: pnpm
+        registry-url: 'https://registry.npmjs.org'
+    - name: Update npm to latest (for trusted publishing)
+      run: npm i -g npm@latest
+      shell: bash
     - name: Install deps
       run: pnpm install
       shell: bash
