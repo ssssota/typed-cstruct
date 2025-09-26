@@ -36,6 +36,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-rust
+        with:
+          components: clippy rustfmt
       - run: cargo fmt --all --check
       - run: cargo clippy --all
       - run: cargo test --all
