@@ -1,0 +1,40 @@
+services:
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    command:
+      [
+        "emcc",
+        "-Os",
+        "-o",
+        "/app/dist/index.mjs",
+        "--emit-tsd",
+        "/app/dist/index.d.ts",
+        "-s",
+        "EXPORT_ES6=1",
+        "-s",
+        "EXPORTED_RUNTIME_METHODS=HEAPU8",
+        "-s",
+        "ALLOW_MEMORY_GROWTH=1",
+        "/app/lib/sample.c",
+      ]
+  bindgen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    command:
+      [
+        "npx",
+        "-p",
+        "@typed-cstruct/generator@0.5.0",
+        "tcgen",
+        "-h",
+        "/app/lib/sample.h",
+        '--clang-args="--sysroot=/emsdk/upstream/emscripten/cache/wasm/sysroot"',
+        "--entry-types=sample1",
+      ]
