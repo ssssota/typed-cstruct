@@ -10,7 +10,7 @@ services:
         "emcc",
         "-Os",
         "-o",
-        "/app/dist/index.mjs",
+        "/app/dist/index.js",
         "--emit-tsd",
         "/app/dist/index.d.ts",
         "-s",
@@ -36,5 +36,6 @@ services:
         "-h",
         "/app/lib/sample.h",
         '--clang-args="--sysroot=/emsdk/upstream/emscripten/cache/wasm/sysroot"',
-        "--entry-types=sample1",
+        "--entry-types=sample1_t",
+        "/app/dist/bindings.ts",
       ]
