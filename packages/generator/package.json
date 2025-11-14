@@ -15,18 +15,16 @@
 		}
 	},
 	"napi": {
-		"name": "generator",
-		"triples": {
-			"additional": [
-				"aarch64-apple-darwin",
-				"aarch64-unknown-linux-gnu",
-				"aarch64-unknown-linux-musl",
-				"aarch64-pc-windows-msvc",
-				"armv7-unknown-linux-gnueabihf",
-				"x86_64-unknown-linux-musl",
-				"i686-pc-windows-msvc"
-			]
-		}
+		"binaryName": "generator",
+		"targets": [
+			"aarch64-apple-darwin",
+			"aarch64-unknown-linux-gnu",
+			"aarch64-unknown-linux-musl",
+			"aarch64-pc-windows-msvc",
+			"armv7-unknown-linux-gnueabihf",
+			"x86_64-unknown-linux-musl",
+			"i686-pc-windows-msvc"
+		]
 	},
 	"files": [
 		"index.js",
@@ -40,7 +38,7 @@
 		"url": "git+https://github.com/ssssota/typed-cstruct.git"
 	},
 	"devDependencies": {
-		"@napi-rs/cli": "^2.18.4"
+		"@napi-rs/cli": "^3.2.0"
 	},
 	"engines": {
 		"node": ">= 10"
