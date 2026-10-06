@@ -40,7 +40,7 @@
 		"url": "git+https://github.com/ssssota/typed-cstruct.git"
 	},
 	"devDependencies": {
-		"@napi-rs/cli": "^2.18.4"
+		"@napi-rs/cli": "^3.0.0"
 	},
 	"engines": {
 		"node": ">= 10"
