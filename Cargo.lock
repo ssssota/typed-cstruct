@@ -28,7 +28,7 @@ dependencies = [
  "regex",
  "rustc-hash",
  "shlex",
- "syn",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -85,13 +85,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "convert_case"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1af709f1f33454bf52eadfc8c78b3b9ef9cb26fb54d16dc9cd9a7299f899fd1b"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "ctor"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a2785755761f3ddc1492979ce1e48d2c00d09311c39e4466429188f3dd6501"
 dependencies = [
  "quote",
- "syn",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -186,7 +195,7 @@ checksum = "55740c4ae1d8696773c78fdafd5d0e5fe9bc9f1b071c7ba493ba5c413a9184f3"
 dependencies = [
  "bitflags",
  "ctor",
- "napi-derive",
+ "napi-derive 2.16.13",
  "napi-sys",
  "once_cell",
 ]
@@ -204,11 +213,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cbe2585d8ac223f7d34f13701434b9d5f4eb9c332cccce8dee57ea18ab8ab0c"
 dependencies = [
  "cfg-if",
- "convert_case",
- "napi-derive-backend",
+ "convert_case 0.6.0",
+ "napi-derive-backend 1.0.75",
  "proc-macro2",
  "quote",
- "syn",
+ "syn 2.0.106",
+]
+
+[[package]]
+name = "napi-derive"
+version = "3.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3f284288c8a2a4a66519e24dcc0cbfa1b7e0abc37bdd073185c68276f08f3d3"
+dependencies = [
+ "convert_case 0.12.0",
+ "napi-derive-backend 8.0.0",
+ "proc-macro2",
+ "quote",
+ "syn 3.0.10",
+ "unicode-ident",
 ]
 
 [[package]]
@@ -217,13 +240,24 @@ version = "1.0.75"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1639aaa9eeb76e91c6ae66da8ce3e89e921cd3885e99ec85f4abacae72fc91bf"
 dependencies = [
- "convert_case",
+ "convert_case 0.6.0",
  "once_cell",
  "proc-macro2",
  "quote",
- "regex",
+ "syn 2.0.106",
+]
+
+[[package]]
+name = "napi-derive-backend"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32477ed34450779386e6aaa3b33bcf3916035b7de0fee68b73716f65a3894003"
+dependencies = [
+ "convert_case 0.12.0",
+ "proc-macro2",
+ "quote",
  "semver",
- "syn",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -282,7 +316,7 @@ dependencies = [
  "phf_shared",
  "proc-macro2",
  "quote",
- "syn",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -301,7 +335,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64d1ec885c64d0457d564db4ec299b2dae3f9c02808b8ad9c3a089c591b18033"
 dependencies = [
  "proc-macro2",
- "syn",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -380,7 +414,7 @@ checksum = "5b0276cf7f2c73365f7157c8123c21cd9a50fbbd844757af28ca1f5925fc2a00"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -413,6 +447,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "syn"
+version = "3.0.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ae9ccbea3a7b0b09443036490c8f34a8b1b760fd345e5c0dae0aac718faea79"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
 name = "typed-cstruct_generator"
 version = "0.0.0"
 dependencies = [
@@ -420,9 +465,9 @@ dependencies = [
  "insta",
  "napi",
  "napi-build",
- "napi-derive",
+ "napi-derive 3.7.2",
  "phf",
- "syn",
+ "syn 2.0.106",
 ]
 
 [[package]]
